@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
@@ -25,6 +26,9 @@ type Client struct {
 type Session struct {
 	clients   map[*Client]bool
 	broadcast chan []byte
+	//start time para calcular o tempo e sincronizar
+	startTime   int64
+	elapsedTime int
 }
 
 func (s *Session) run() {
@@ -56,8 +60,10 @@ func (c *Client) write() {
 }
 
 type Message struct {
-	Action string `json:"action"`
-	Data   string `json:"data"`
+	Action      string `json:"action"`
+	Data        string `json:"data"`
+	StartTime   int64  `json:"startTime"`
+	ElapsedTime int    `json:"elapsedTime"`
 }
 
 var sessions = make(map[string]*Session)
@@ -77,6 +83,10 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 
 	go client.write()
 
+	// Send the starting timestamp and elapsed time to the new user
+	if session.startTime > 0 || session.elapsedTime > 0 {
+		sendToSession(session, "play", strconv.FormatInt(session.startTime, 10)+","+strconv.Itoa(session.elapsedTime), client)
+	}
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
@@ -91,20 +101,43 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 
 		switch msg.Action {
 		case "pause":
-			sendToSession(session, "pause", msg.Data)
+			sendToSession(session, "pause", msg.Data, nil)
 		case "play":
-			sendToSession(session, "play", msg.Data)
+			sendToSession(session, "play", msg.Data, nil)
 		}
 	}
 }
 
-func sendToSession(session *Session, action string, data string) {
+func sendToSession(session *Session, action string, data string, targetClient *Client) {
+	now := time.Now().UnixNano() / int64(time.Millisecond)
+
+	if action == "play" {
+		if session.startTime == 0 {
+			session.startTime = now
+		}
+	} else if action == "pause" {
+		if session.startTime != 0 {
+			elapsed := now - session.startTime
+			session.elapsedTime += int(elapsed) / 1000
+			session.startTime = 0
+		}
+	}
+
 	message := Message{
-		Action: action,
-		Data:   data,
+		Action:      action,
+		Data:        data,
+		StartTime:   session.startTime,
+		ElapsedTime: session.elapsedTime,
 	}
 	messageBytes, _ := json.Marshal(message)
-	session.broadcast <- messageBytes
+
+	if targetClient != nil {
+		targetClient.send <- messageBytes
+	} else {
+		for client := range session.clients {
+			client.send <- messageBytes
+		}
+	}
 }
 
 func getSession(sessionID string) *Session {
