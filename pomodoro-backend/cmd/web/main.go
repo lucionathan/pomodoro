@@ -70,23 +70,40 @@ var sessions = make(map[string]*Session)
 var sessionsMutex = &sync.Mutex{}
 
 func handleWebSocket(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
+	conn, err := upgradeConnection(w, r)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
+	client, session := createClientAndSession(r, conn)
+	go client.write()
+
+	sendStartingTimestampAndElapsedTime(session, client)
+
+	readAndProcessMessages(conn, session, client)
+}
+
+func upgradeConnection(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+	return conn, err
+}
+
+func createClientAndSession(r *http.Request, conn *websocket.Conn) (*Client, *Session) {
 	client := &Client{conn: conn, send: make(chan []byte, 256)}
 	sessionID := r.URL.Query().Get("session")
 	session := getSession(sessionID)
 	session.clients[client] = true
+	return client, session
+}
 
-	go client.write()
-
-	// Send the starting timestamp and elapsed time to the new user
+func sendStartingTimestampAndElapsedTime(session *Session, client *Client) {
 	if session.startTime > 0 || session.elapsedTime > 0 {
 		sendToSession(session, "play", strconv.FormatInt(session.startTime, 10)+","+strconv.Itoa(session.elapsedTime), client)
 	}
+}
+
+func readAndProcessMessages(conn *websocket.Conn, session *Session, client *Client) {
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
@@ -108,7 +125,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func sendToSession(session *Session, action string, data string, targetClient *Client) {
+func calculateSessionTime(session *Session, action string) {
 	now := time.Now().UnixNano() / int64(time.Millisecond)
 
 	if action == "play" {
@@ -122,6 +139,11 @@ func sendToSession(session *Session, action string, data string, targetClient *C
 			session.startTime = 0
 		}
 	}
+}
+
+func sendToSession(session *Session, action string, data string, targetClient *Client) {
+
+	calculateSessionTime(session, action)
 
 	message := Message{
 		Action:      action,
