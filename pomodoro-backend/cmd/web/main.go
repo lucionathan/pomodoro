@@ -20,40 +20,25 @@ var upgrader = websocket.Upgrader{
 
 type Client struct {
 	conn *websocket.Conn
-	send chan []byte
 }
 
 type Session struct {
-	clients   map[*Client]bool
-	broadcast chan []byte
-	//start time para calcular o tempo e sincronizar
+	clients     map[*Client]bool
+	broadcast   chan []byte
 	startTime   int64
 	elapsedTime int
 }
 
 func (s *Session) run() {
-	ticker := time.NewTicker(1 * time.Second)
-	defer ticker.Stop()
-
 	for {
 		select {
 		case message := <-s.broadcast:
 			for client := range s.clients {
-				client.send <- message
-			}
-		}
-	}
-}
-
-func (c *Client) write() {
-	defer c.conn.Close()
-
-	for {
-		select {
-		case message := <-c.send:
-			err := c.conn.WriteMessage(websocket.TextMessage, message)
-			if err != nil {
-				return
+				err := client.conn.WriteMessage(websocket.TextMessage, message)
+				if err != nil {
+					client.conn.Close() // Close the connection
+					delete(s.clients, client)
+				}
 			}
 		}
 	}
@@ -77,7 +62,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	client, session := createClientAndSession(r, conn)
-	go client.write()
+	session.clients[client] = true
 
 	sendStartingTimestampAndElapsedTime(session, client)
 
@@ -90,10 +75,9 @@ func upgradeConnection(w http.ResponseWriter, r *http.Request) (*websocket.Conn,
 }
 
 func createClientAndSession(r *http.Request, conn *websocket.Conn) (*Client, *Session) {
-	client := &Client{conn: conn, send: make(chan []byte, 256)}
+	client := &Client{conn: conn}
 	sessionID := r.URL.Query().Get("session")
 	session := getSession(sessionID)
-	session.clients[client] = true
 	return client, session
 }
 
@@ -127,7 +111,6 @@ func readAndProcessMessages(conn *websocket.Conn, session *Session, client *Clie
 
 func calculateSessionTime(session *Session, action string) {
 	now := time.Now().UnixNano() / int64(time.Millisecond)
-
 	if action == "play" {
 		if session.startTime == 0 {
 			session.startTime = now
@@ -142,7 +125,6 @@ func calculateSessionTime(session *Session, action string) {
 }
 
 func sendToSession(session *Session, action string, data string, targetClient *Client) {
-
 	calculateSessionTime(session, action)
 
 	message := Message{
@@ -154,18 +136,18 @@ func sendToSession(session *Session, action string, data string, targetClient *C
 	messageBytes, _ := json.Marshal(message)
 
 	if targetClient != nil {
-		targetClient.send <- messageBytes
-	} else {
-		for client := range session.clients {
-			client.send <- messageBytes
+		err := targetClient.conn.WriteMessage(websocket.TextMessage, messageBytes)
+		if err != nil {
+			delete(session.clients, targetClient)
 		}
+	} else {
+		session.broadcast <- messageBytes
 	}
 }
 
 func getSession(sessionID string) *Session {
 	sessionsMutex.Lock()
 	defer sessionsMutex.Unlock()
-
 	session, ok := sessions[sessionID]
 	if !ok {
 		session = &Session{
