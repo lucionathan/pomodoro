@@ -156,7 +156,7 @@ func getSession(sessionID string) *Session {
 		}
 		go session.broadcastMessages()
 		sessions[sessionID] = session
-	}todo motoqueiro precisa de sua rabuda pprt
+	}
 
 	return session
 }
