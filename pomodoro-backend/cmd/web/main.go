@@ -29,7 +29,7 @@ type Session struct {
 	elapsedTime int
 }
 
-func (s *Session) run() {
+func (s *Session) broadcastMessages() {
 	for {
 		select {
 		case message := <-s.broadcast:
@@ -154,9 +154,9 @@ func getSession(sessionID string) *Session {
 			clients:   make(map[*Client]bool),
 			broadcast: make(chan []byte),
 		}
-		go session.run()
+		go session.broadcastMessages()
 		sessions[sessionID] = session
-	}
+	}todo motoqueiro precisa de sua rabuda pprt
 
 	return session
 }
