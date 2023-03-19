@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"strconv"
 	"sync"
@@ -54,7 +55,24 @@ type Message struct {
 var sessions = make(map[string]*Session)
 var sessionsMutex = &sync.Mutex{}
 
-func handleWebSocket(w http.ResponseWriter, r *http.Request) {
+func handleWebSocketCreate(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgradeConnection(w, r)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	sessionID := generateRandomSessionID()
+	session := getSession(sessionID)
+	fmt.Println(sessionID)
+	client := &Client{conn: conn}
+	session.clients[client] = true
+	sendStartingTimestampAndElapsedTime(session, client)
+
+	readAndProcessMessages(conn, session, client)
+}
+
+func handleWebSocketJoin(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgradeConnection(w, r)
 	if err != nil {
 		log.Println(err)
@@ -63,7 +81,6 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 
 	client, session := createClientAndSession(r, conn)
 	session.clients[client] = true
-
 	sendStartingTimestampAndElapsedTime(session, client)
 
 	readAndProcessMessages(conn, session, client)
@@ -161,8 +178,21 @@ func getSession(sessionID string) *Session {
 	return session
 }
 
+func generateRandomSessionID() string {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	const length = 8
+
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = charset[rand.Intn(len(charset))]
+	}
+
+	return string(b)
+}
+
 func main() {
-	http.HandleFunc("/ws", handleWebSocket)
+	http.HandleFunc("/ws/join", handleWebSocketJoin)
+	http.HandleFunc("/ws/create", handleWebSocketCreate)
 	fmt.Println("Server started at :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
