@@ -1,99 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { NextPage } from 'next';
+import Link from 'next/link';
+import { auth } from '../../config/firebaseConfig';
+import Pomodoro from './pomodoro/index.page';
 
-const IndexPage: React.FC = () => {
-  const [time, setTime] = useState(0);
-  const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
-  const [sessionID, setSessionID] = useState<string | null>(null);
-  const [ws, setWebSocket] = useState<WebSocket | null>(null);
-
-  useEffect(() => {
-    if (!ws) return;
-  
-    const handleMessage = (event: MessageEvent) => {
-      const message = JSON.parse(event.data);
-      switch (message.action) {
-        case 'pause':
-          if (intervalId) clearInterval(intervalId);
-          break;
-        case 'play':
-          const startTime = message.startTime;
-          const elapsedTime = message.elapsedTime;
-          setTime(elapsedTime);
-  
-          if (intervalId) clearInterval(intervalId);
-  
-          const newIntervalId = setInterval(() => {
-            const currentTime = new Date().getTime();
-            setTime((prevTime) => elapsedTime + Math.floor((currentTime - startTime) / 1000));
-          }, 1000);
-  
-          setIntervalId(newIntervalId);
-          break;
-      }
-    };
-  
-    ws.addEventListener('message', handleMessage);
-    return () => {
-      ws.removeEventListener('message', handleMessage);
-    };
-  }, [ws, intervalId]);  
-
-  const setupWebSocket = (path: string) => {
-    const newWs = new WebSocket(`ws://localhost:8080${path}?session=${sessionID}`);
-    setWebSocket(newWs);
-  };
-
-  const handleCreateSession = () => {
-    setupWebSocket('/ws/create');
-  };
-
-  const handleJoinSession = () => {
-    if (!sessionID) return;
-    setupWebSocket('/ws/join');
-  };
-
-  const handlePause = () => {
-    if (!ws) return;
-    const message = {
-      action: 'pause',
-      data: '',
-    };
-    ws.send(JSON.stringify(message));
-  };
-
-  const handlePlay = () => {
-    if (!ws) return;
-    const message = {
-      action: 'play',
-      data: time.toString(),
-    };
-    ws.send(JSON.stringify(message));
-  };
-
-  const displayTime = () => {
-    const minutes = Math.floor(time / 60);
-    const seconds = time % 60;
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
-
+const Home: NextPage = () => {
   return (
     <div>
-      <h1>Pomodoro Timer</h1>
-      <p>
-        <label htmlFor="session-id">Session ID:</label>
-        <input
-          type="text"
-          id="session-id"
-          onChange={(e) => setSessionID(e.target.value)}
-        />
-        <button onClick={handleCreateSession}>Create New Session</button>
-        <button onClick={handleJoinSession}>Join Existing Session</button>
-      </p>
-      <p>{displayTime()}</p>
-      <button onClick={handlePause}>Pause</button>
-      <button onClick={handlePlay}>Play</button>
+      <Pomodoro/>
     </div>
+    // <div style={{ paddingTop: '50px' }}>
+
+    //   {/* <div className={(styles.flexContainer, styles.description)}> */}
+    //     <h2>Já tem uma conta?</h2>
+    //     <Link href='/login'>
+    //       <a>Entrar</a>
+    //     </Link>
+    //   {/* </div> */}
+
+    //   {/* <div className={(styles.flexContainer, styles.description)}> */}
+    //     <h2>Não tem uma conta?</h2>
+    //     <Link href='/register'>
+    //       <a>Registrar</a>
+    //     </Link>
+    //   {/* </div> */}
+    // </div>
   );
 };
 
-export default IndexPage;
+export default Home;
