@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { NextPage } from 'next';
 import Link from 'next/link';
 import { auth } from '../../config/firebaseConfig';
-import Pomodoro from './pomodoro/index.page';
+import Pomodoro from './pomodoro';
 
 const Home: NextPage = () => {
   return (

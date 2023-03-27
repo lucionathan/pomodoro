@@ -1,4 +1,13 @@
 import React, { useState, useEffect, useContext } from 'react';
+import {
+  Box,
+  Button,
+  Flex,
+  FormControl,
+  FormLabel,
+  Input,
+  Text,
+} from "@chakra-ui/react";
 
 const Pomodoro: React.FC = () => {
   const [time, setTime] = useState(0);
@@ -76,23 +85,64 @@ const Pomodoro: React.FC = () => {
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  // return (
+  //   <div>
+  //     <Heading>Pomodoro Timer</Heading>
+  //     <Text>
+  //       <label htmlFor="session-id">Session ID:</label>
+  //       <input
+  //         type="text"
+  //         id="session-id"
+  //         onChange={(e) => setSessionID(e.target.value)}
+  //       />
+  //       <Button m="10px" onClick={handleCreateSession}>Create New Session</Button>
+  //       <Button m="10px" onClick={handleJoinSession}>Join Existing Session</Button>
+  //     </Text>
+  //     <Text>{displayTime()}</Text>
+  //     <Button m="10px" onClick={handlePause}>Pause</Button>
+  //     <Button m="10px"onClick={handlePlay}>Play</Button>
+  //   </div>
+  // );
+
   return (
-    <div>
-      <h1>Pomodoro Timer</h1>
-      <p>
-        <label htmlFor="session-id">Session ID:</label>
-        <input
+    <Box
+      display="flex"
+      flexDirection="column"
+      alignItems="center"
+      justifyContent="center"
+      height="100vh"
+      mx="auto"
+    >
+      <Text fontSize="4xl" fontWeight="bold">
+        Pomodoro Timer
+      </Text>
+      <FormControl maxW="xs" mt={8}>
+        <FormLabel fontSize="2xl" htmlFor="session-id">Session ID:</FormLabel>
+        <Input
           type="text"
           id="session-id"
           onChange={(e) => setSessionID(e.target.value)}
+          mb={4}
+          size="sm"
+          fontSize="xl"
         />
-        <button onClick={handleCreateSession}>Create New Session</button>
-        <button onClick={handleJoinSession}>Join Existing Session</button>
-      </p>
-      <p>{displayTime()}</p>
-      <button onClick={handlePause}>Pause</button>
-      <button onClick={handlePlay}>Play</button>
-    </div>
+        <Flex>
+          <Button onClick={handleCreateSession} mr={2}>
+            Create Session
+          </Button>
+          <Button onClick={handleJoinSession}>Join Session</Button>
+        </Flex>
+      </FormControl>
+      <Text fontSize="6xl" fontWeight="bold" my={4}>
+        {displayTime()}
+      </Text>
+      <Flex>
+        <Button fontSize="xl" onClick={handlePause} mr={2}>
+          Pause
+        </Button>
+        <Button fontSize="xl" onClick={handlePlay}>Play</Button>
+      </Flex>
+    </Box>
   );
 };
 
