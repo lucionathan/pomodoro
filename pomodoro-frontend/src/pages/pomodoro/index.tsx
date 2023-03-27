@@ -21,6 +21,9 @@ const Pomodoro: React.FC = () => {
     const handleMessage = (event: MessageEvent) => {
       const message = JSON.parse(event.data);
       switch (message.action) {
+        case 'created':
+          setSessionID(message.data);
+          break;
         case 'pause':
           if (intervalId) clearInterval(intervalId);
           break;
@@ -85,25 +88,6 @@ const Pomodoro: React.FC = () => {
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  // return (
-  //   <div>
-  //     <Heading>Pomodoro Timer</Heading>
-  //     <Text>
-  //       <label htmlFor="session-id">Session ID:</label>
-  //       <input
-  //         type="text"
-  //         id="session-id"
-  //         onChange={(e) => setSessionID(e.target.value)}
-  //       />
-  //       <Button m="10px" onClick={handleCreateSession}>Create New Session</Button>
-  //       <Button m="10px" onClick={handleJoinSession}>Join Existing Session</Button>
-  //     </Text>
-  //     <Text>{displayTime()}</Text>
-  //     <Button m="10px" onClick={handlePause}>Pause</Button>
-  //     <Button m="10px"onClick={handlePlay}>Play</Button>
-  //   </div>
-  // );
-
   return (
     <Box
       display="flex"
@@ -117,7 +101,7 @@ const Pomodoro: React.FC = () => {
         Pomodoro Timer
       </Text>
       <FormControl maxW="xs" mt={8}>
-        <FormLabel fontSize="2xl" htmlFor="session-id">Session ID:</FormLabel>
+        <FormLabel fontSize="2xl" htmlFor="session-id">Session ID: {sessionID}</FormLabel>
         <Input
           type="text"
           id="session-id"

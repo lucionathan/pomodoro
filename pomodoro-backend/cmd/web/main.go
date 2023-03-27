@@ -68,6 +68,7 @@ func handleWebSocketCreate(w http.ResponseWriter, r *http.Request) {
 	client := &Client{conn: conn}
 	session.clients[client] = true
 	sendStartingTimestampAndElapsedTime(session, client)
+	sendToSession(session, "created", sessionID, client)
 
 	readAndProcessMessages(conn, session, client)
 }
