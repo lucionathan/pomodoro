@@ -14,6 +14,10 @@ const Pomodoro: React.FC = () => {
   const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
   const [sessionID, setSessionID] = useState<string | null>(null);
   const [ws, setWebSocket] = useState<WebSocket | null>(null);
+    
+  const studyTime = 25 * 60;
+  const restingTime = 5 * 60;
+
 
   useEffect(() => {
     if (!ws) return;
@@ -41,14 +45,14 @@ const Pomodoro: React.FC = () => {
   
           setIntervalId(newIntervalId);
           break;
-      }
+        };
     };
   
     ws.addEventListener('message', handleMessage);
     return () => {
       ws.removeEventListener('message', handleMessage);
     };
-  }, [ws, intervalId]);  
+  }, [ws, intervalId]); 
 
   const setupWebSocket = (path: string) => {
     const newWs = new WebSocket(`ws://localhost:8080${path}?session=${sessionID}`);
@@ -81,10 +85,12 @@ const Pomodoro: React.FC = () => {
     };
     ws.send(JSON.stringify(message));
   };
-
   const displayTime = () => {
-    const minutes = Math.floor(time / 60);
-    const seconds = time % 60;
+    const checkType = (time % (studyTime + restingTime));
+  
+    const decreasingTime = checkType < studyTime ? studyTime - checkType : restingTime - (checkType - studyTime);
+    const minutes = Math.floor(decreasingTime / 60);
+    const seconds = decreasingTime % 60;
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 

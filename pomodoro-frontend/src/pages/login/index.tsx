@@ -1,5 +1,15 @@
 import React, { useState } from 'react';
 import { auth } from '../../../config/firebaseConfig';
+import {
+  Box,
+  Button,
+  Center,
+  Flex,
+  FormControl,
+  FormLabel,
+  Input,
+  Text,
+} from "@chakra-ui/react";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -15,22 +25,43 @@ const Login: React.FC = () => {
   };
 
   return (
+    <Center h="100vh">
+  <Box>
     <form onSubmit={handleSubmit}>
-      <h1>Login</h1>
-      <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
-      <button type="submit">Login</button>
+      <FormControl maxW="xs" minW="md" minH="300px" mt={8} border="1px">
+        <Text fontSize="4xl" fontWeight="bold" m="10px" mt="30px">Login</Text>
+        <Flex flexDirection="column">
+
+          <Input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            mb={4}
+            size="sm"
+            fontSize="xl"
+            maxWidth="400px"
+            m="10px"
+          />
+          <Input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            mb={4}
+            size="sm"
+            fontSize="xl"
+            maxWidth="400px"
+            m="10px"
+          />
+        </Flex>
+        <Button m="10px" type="submit">Login</Button>
+
+      </FormControl>
     </form>
+  </Box>
+</Center>
+
   );
 };
 

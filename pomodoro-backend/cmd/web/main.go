@@ -112,6 +112,7 @@ func readAndProcessMessages(conn *websocket.Conn, session *Session, client *Clie
 			delete(session.clients, client)
 			break
 		}
+		// fmt.Println(message)
 
 		var msg Message
 		json.Unmarshal(message, &msg)
