@@ -15,8 +15,7 @@ const Pomodoro: React.FC = () => {
   const [sessionID, setSessionID] = useState<string | null>(null);
   const [ws, setWebSocket] = useState<WebSocket | null>(null);
     
-  // const studyTime = 25 * 60;
-  const studyTime = 10;
+  const studyTime = 25 * 60;
   const restingTime = 5 * 60;
 
 
