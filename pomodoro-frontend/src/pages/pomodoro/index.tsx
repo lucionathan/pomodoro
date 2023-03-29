@@ -15,7 +15,8 @@ const Pomodoro: React.FC = () => {
   const [sessionID, setSessionID] = useState<string | null>(null);
   const [ws, setWebSocket] = useState<WebSocket | null>(null);
     
-  const studyTime = 25 * 60;
+  // const studyTime = 25 * 60;
+  const studyTime = 10;
   const restingTime = 5 * 60;
 
 
@@ -94,6 +95,13 @@ const Pomodoro: React.FC = () => {
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  const displayType = () => {
+    const checkType = (time % (studyTime + restingTime));
+    const operationType = checkType < studyTime ? "Study" : "Resting";
+
+    return operationType;
+  }
+
   return (
     <Box
       display="flex"
@@ -123,6 +131,7 @@ const Pomodoro: React.FC = () => {
           <Button onClick={handleJoinSession}>Join Session</Button>
         </Flex>
       </FormControl>
+      <Text fontSize="4xl" fontWeight="bold" mt="6">{displayType()}</Text>
       <Text fontSize="6xl" fontWeight="bold" my={4}>
         {displayTime()}
       </Text>
