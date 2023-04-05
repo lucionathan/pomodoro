@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import {
   Box,
   Button,
+  ChakraProvider,
   Flex,
   FormControl,
   FormLabel,
@@ -14,7 +15,8 @@ const Pomodoro: React.FC = () => {
   const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
   const [sessionID, setSessionID] = useState<string | null>(null);
   const [ws, setWebSocket] = useState<WebSocket | null>(null);
-    
+  const audioRef = useRef<HTMLAudioElement>(null);
+
   const studyTime = 25 * 60;
   const restingTime = 5 * 60;
 
@@ -89,6 +91,14 @@ const Pomodoro: React.FC = () => {
     const checkType = (time % (studyTime + restingTime));
   
     const decreasingTime = checkType < studyTime ? studyTime - checkType : restingTime - (checkType - studyTime);
+
+    if (decreasingTime === 1) {
+      console.log("cheguei no audio")
+      if (audioRef.current) {
+        audioRef.current.play();
+      }
+    }
+
     const minutes = Math.floor(decreasingTime / 60);
     const seconds = decreasingTime % 60;
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
@@ -110,9 +120,13 @@ const Pomodoro: React.FC = () => {
       height="100vh"
       mx="auto"
     >
-      <Text fontSize="4xl" fontWeight="bold">
-        Pomodoro Timer
-      </Text>
+      <ChakraProvider>
+        <Text fontSize="4xl" fontWeight="bold">
+          Pomodoro Timer
+        </Text>
+      </ChakraProvider>
+
+      <audio ref={audioRef} src="/alarm.mp3" />
       <FormControl maxW="xs" mt={8}>
         <FormLabel fontSize="2xl" htmlFor="session-id">Session ID: {sessionID}</FormLabel>
         <Input
