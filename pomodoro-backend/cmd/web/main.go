@@ -24,10 +24,12 @@ type Client struct {
 }
 
 type Session struct {
+	id          string
 	clients     map[*Client]bool
 	broadcast   chan []byte
 	startTime   int64
 	elapsedTime int
+	quit        chan bool
 }
 
 func (s *Session) broadcastMessages() {
@@ -41,6 +43,9 @@ func (s *Session) broadcastMessages() {
 					delete(s.clients, client)
 				}
 			}
+
+		case <-s.quit:
+			return
 		}
 	}
 }
@@ -64,7 +69,6 @@ func handleWebSocketCreate(w http.ResponseWriter, r *http.Request) {
 
 	sessionID := generateRandomSessionID()
 	session := getSession(sessionID)
-	fmt.Println(sessionID)
 	client := &Client{conn: conn}
 	session.clients[client] = true
 	sendStartingTimestampAndElapsedTime(session, client)
@@ -110,6 +114,7 @@ func readAndProcessMessages(conn *websocket.Conn, session *Session, client *Clie
 		_, message, err := conn.ReadMessage()
 		if err != nil {
 			delete(session.clients, client)
+			checkAndCloseSessionIfEmpty(session)
 			break
 		}
 		// fmt.Println(message)
@@ -125,6 +130,15 @@ func readAndProcessMessages(conn *websocket.Conn, session *Session, client *Clie
 		case "play":
 			sendToSession(session, "play", msg.Data, nil)
 		}
+	}
+}
+
+func checkAndCloseSessionIfEmpty(session *Session) {
+	if len(session.clients) == 0 {
+		session.quit <- true
+		sessionsMutex.Lock()
+		delete(sessions, session.id)
+		sessionsMutex.Unlock()
 	}
 }
 
@@ -170,8 +184,10 @@ func getSession(sessionID string) *Session {
 	session, ok := sessions[sessionID]
 	if !ok {
 		session = &Session{
+			id:        sessionID,
 			clients:   make(map[*Client]bool),
 			broadcast: make(chan []byte),
+			quit:      make(chan bool),
 		}
 		go session.broadcastMessages()
 		sessions[sessionID] = session
