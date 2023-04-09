@@ -3,7 +3,7 @@ import { NextPage } from 'next';
 import Link from 'next/link';
 import { auth } from '../../config/firebaseConfig';
 import Pomodoro from './pomodoro';
-
+import withAuth from './withAuth';
 const Home: NextPage = () => {
   return (
     <div>
@@ -28,4 +28,4 @@ const Home: NextPage = () => {
   );
 };
 
-export default Home;
+export default withAuth(Home);

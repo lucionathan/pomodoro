@@ -2,7 +2,6 @@ import React, { useState, useEffect, useContext, useRef } from 'react';
 import {
   Box,
   Button,
-  ChakraProvider,
   Flex,
   FormControl,
   FormLabel,
@@ -120,13 +119,13 @@ const Pomodoro: React.FC = () => {
       height="100vh"
       mx="auto"
     >
-      <ChakraProvider>
-        <Text fontSize="4xl" fontWeight="bold">
-          Pomodoro Timer
-        </Text>
-      </ChakraProvider>
 
-      <audio ref={audioRef} src="/alarm.mp3" />
+      <Text fontSize="5xl" fontWeight="bold">
+        Pomodoro Timer
+      </Text>
+      <Box>
+        <audio ref={audioRef} src="/alarm.mp3" />
+      </Box>
       <FormControl maxW="xs" mt={8}>
         <FormLabel fontSize="2xl" htmlFor="session-id">Session ID: {sessionID}</FormLabel>
         <Input

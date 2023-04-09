@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useRouter } from 'next/router';
 import { auth } from '../../../config/firebaseConfig';
 import {
   Box,
@@ -15,10 +16,13 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  const router = useRouter(); // Add this line
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     try {
       await auth.signInWithEmailAndPassword(email, password);
+      router.push('/'); // Add this line to redirect to the home page
     } catch (error) {
       console.error('Error signing in:', error);
     }

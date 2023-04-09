@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useRouter } from 'next/router';
 import { auth } from '../../../config/firebaseConfig';
 import {
   Box,
@@ -10,15 +11,19 @@ import {
   Input,
   Text,
 } from "@chakra-ui/react";
+import { RouteHandlerManager } from 'next/dist/server/future/route-handler-managers/route-handler-manager';
 
 const Register: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  const router = useRouter(); // Add this line
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     try {
       await auth.createUserWithEmailAndPassword(email, password);
+      router.push('/login');
     } catch (error) {
       console.error('Error registering:', error);
     }
