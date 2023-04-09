@@ -32,7 +32,7 @@ const Header: React.FC = () => {
       <Flex justifyContent="space-between" alignItems="center">
         <Box>
           {/* Add your application logo or title here */}
-          <span>Your App</span>
+          <span>Pomodoro</span>
         </Box>
         {user && (
           <Box>

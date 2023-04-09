@@ -61,6 +61,8 @@ const Login: React.FC = () => {
         </Flex>
         <Button m="10px" type="submit">Login</Button>
 
+        <Button onClick={() => router.push("/register")}>Register</Button>
+
       </FormControl>
     </form>
   </Box>
