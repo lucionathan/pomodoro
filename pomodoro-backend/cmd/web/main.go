@@ -24,13 +24,13 @@ type Client struct {
 }
 
 type Session struct {
-	id          string
-	public      bool
-	clients     map[*Client]bool
-	broadcast   chan []byte
-	startTime   int64
-	elapsedTime int
-	quit        chan bool
+	Id          string           `json:"id"`
+	Public      bool             `json:"public"`
+	Clients     map[*Client]bool `json:"-"`
+	Broadcast   chan []byte      `json:"-"`
+	StartTime   int64            `json:"startTime"`
+	ElapsedTime int              `json:"elapsedTime"`
+	Quit        chan bool        `json:"-"`
 }
 
 type Message struct {
@@ -46,6 +46,7 @@ var sessionsMutex = &sync.Mutex{}
 func main() {
 	http.HandleFunc("/ws/join", handleWebSocketJoin)
 	http.HandleFunc("/ws/create", handleWebSocketCreate)
+	http.HandleFunc("/getSessions", getPublicSessions)
 	fmt.Println("Server started at :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
@@ -57,10 +58,11 @@ func createSession(sessionID string) *Session {
 	defer sessionsMutex.Unlock()
 
 	session := &Session{
-		id:        sessionID,
-		clients:   make(map[*Client]bool),
-		broadcast: make(chan []byte),
-		quit:      make(chan bool),
+		Id:        sessionID,
+		Public:    true,
+		Clients:   make(map[*Client]bool),
+		Broadcast: make(chan []byte),
+		Quit:      make(chan bool),
 	}
 	go session.broadcastMessages()
 	sessions[sessionID] = session
@@ -80,6 +82,29 @@ func getSession(sessionID string) (*Session, error) {
 	return session, nil
 }
 
+func getPublicSessions(w http.ResponseWriter, r *http.Request) {
+	sessionsMutex.Lock()
+	defer sessionsMutex.Unlock()
+
+	var sessionsAux []Session
+
+	for _, v := range sessions {
+		fmt.Println(v.Id)
+		if v.Public {
+			sessionsAux = append(sessionsAux, *v)
+		}
+	}
+
+	jsonResp, err := json.Marshal(sessionsAux)
+	// fmt.Println(string(jsonResp))
+
+	if err != nil {
+		log.Fatalf("Error happened in JSON marshal. Err: %s", err)
+	}
+	w.Write(jsonResp)
+	return
+}
+
 func generateRandomSessionID() string {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	const length = 8
@@ -95,26 +120,26 @@ func generateRandomSessionID() string {
 func (s *Session) broadcastMessages() {
 	for {
 		select {
-		case message := <-s.broadcast:
-			for client := range s.clients {
+		case message := <-s.Broadcast:
+			for client := range s.Clients {
 				err := client.conn.WriteMessage(websocket.TextMessage, message)
 				if err != nil {
 					client.conn.Close() // Close the connection
-					delete(s.clients, client)
+					delete(s.Clients, client)
 				}
 			}
 
-		case <-s.quit:
+		case <-s.Quit:
 			return
 		}
 	}
 }
 
 func checkAndCloseSessionIfEmpty(session *Session) {
-	if len(session.clients) == 0 {
-		session.quit <- true
+	if len(session.Clients) == 0 {
+		session.Quit <- true
 		sessionsMutex.Lock()
-		delete(sessions, session.id)
+		delete(sessions, session.Id)
 		sessionsMutex.Unlock()
 	}
 }
@@ -125,7 +150,7 @@ func readAndProcessMessages(conn *websocket.Conn, session *Session, client *Clie
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
-			delete(session.clients, client)
+			delete(session.Clients, client)
 			checkAndCloseSessionIfEmpty(session)
 			break
 		}
@@ -151,32 +176,32 @@ func sendMessageToSession(session *Session, action string, data string, targetCl
 	message := Message{
 		Action:      action,
 		Data:        data,
-		StartTime:   session.startTime,
-		ElapsedTime: session.elapsedTime,
+		StartTime:   session.StartTime,
+		ElapsedTime: session.ElapsedTime,
 	}
 	messageBytes, _ := json.Marshal(message)
 
 	if targetClient != nil {
 		err := targetClient.conn.WriteMessage(websocket.TextMessage, messageBytes)
 		if err != nil {
-			delete(session.clients, targetClient)
+			delete(session.Clients, targetClient)
 		}
 	} else {
-		session.broadcast <- messageBytes
+		session.Broadcast <- messageBytes
 	}
 }
 
 func calculateSessionTime(session *Session, action string) {
 	now := time.Now().UnixNano() / int64(time.Millisecond)
 	if action == "play" {
-		if session.startTime == 0 {
-			session.startTime = now
+		if session.StartTime == 0 {
+			session.StartTime = now
 		}
 	} else if action == "pause" {
-		if session.startTime != 0 {
-			elapsed := now - session.startTime
-			session.elapsedTime += int(elapsed) / 1000
-			session.startTime = 0
+		if session.StartTime != 0 {
+			elapsed := now - session.StartTime
+			session.ElapsedTime += int(elapsed) / 1000
+			session.StartTime = 0
 		}
 	}
 }
@@ -193,7 +218,7 @@ func handleWebSocketCreate(w http.ResponseWriter, r *http.Request) {
 	sessionID := generateRandomSessionID()
 	session := createSession(sessionID)
 	client := &Client{conn: conn}
-	session.clients[client] = true
+	session.Clients[client] = true
 	sendStartingTimestampAndElapsedTime(session, client)
 	sendMessageToSession(session, "created", sessionID, client)
 
@@ -223,7 +248,7 @@ func handleWebSocketJoin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	client := &Client{conn: conn}
-	session.clients[client] = true
+	session.Clients[client] = true
 	sendStartingTimestampAndElapsedTime(session, client)
 
 	readAndProcessMessages(conn, session, client)
@@ -242,7 +267,7 @@ func createClientAndSession(r *http.Request, conn *websocket.Conn) (*Client, *Se
 }
 
 func sendStartingTimestampAndElapsedTime(session *Session, client *Client) {
-	if session.startTime > 0 || session.elapsedTime > 0 {
-		sendMessageToSession(session, "play", strconv.FormatInt(session.startTime, 10)+","+strconv.Itoa(session.elapsedTime), client)
+	if session.StartTime > 0 || session.ElapsedTime > 0 {
+		sendMessageToSession(session, "play", strconv.FormatInt(session.StartTime, 10)+","+strconv.Itoa(session.ElapsedTime), client)
 	}
 }
