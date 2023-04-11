@@ -25,11 +25,71 @@ type Client struct {
 
 type Session struct {
 	id          string
+	public      bool
 	clients     map[*Client]bool
 	broadcast   chan []byte
 	startTime   int64
 	elapsedTime int
 	quit        chan bool
+}
+
+type Message struct {
+	Action      string `json:"action"`
+	Data        string `json:"data"`
+	StartTime   int64  `json:"startTime"`
+	ElapsedTime int    `json:"elapsedTime"`
+}
+
+var sessions = make(map[string]*Session)
+var sessionsMutex = &sync.Mutex{}
+
+func main() {
+	http.HandleFunc("/ws/join", handleWebSocketJoin)
+	http.HandleFunc("/ws/create", handleWebSocketCreate)
+	fmt.Println("Server started at :8080")
+	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+//session
+
+func createSession(sessionID string) *Session {
+	sessionsMutex.Lock()
+	defer sessionsMutex.Unlock()
+
+	session := &Session{
+		id:        sessionID,
+		clients:   make(map[*Client]bool),
+		broadcast: make(chan []byte),
+		quit:      make(chan bool),
+	}
+	go session.broadcastMessages()
+	sessions[sessionID] = session
+
+	return session
+}
+
+func getSession(sessionID string) (*Session, error) {
+	sessionsMutex.Lock()
+	defer sessionsMutex.Unlock()
+
+	session, ok := sessions[sessionID]
+	if !ok {
+		return nil, fmt.Errorf("session not found")
+	}
+
+	return session, nil
+}
+
+func generateRandomSessionID() string {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	const length = 8
+
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = charset[rand.Intn(len(charset))]
+	}
+
+	return string(b)
 }
 
 func (s *Session) broadcastMessages() {
@@ -50,64 +110,16 @@ func (s *Session) broadcastMessages() {
 	}
 }
 
-type Message struct {
-	Action      string `json:"action"`
-	Data        string `json:"data"`
-	StartTime   int64  `json:"startTime"`
-	ElapsedTime int    `json:"elapsedTime"`
-}
-
-var sessions = make(map[string]*Session)
-var sessionsMutex = &sync.Mutex{}
-
-func handleWebSocketCreate(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgradeConnection(w, r)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	sessionID := generateRandomSessionID()
-	session := getSession(sessionID)
-	client := &Client{conn: conn}
-	session.clients[client] = true
-	sendStartingTimestampAndElapsedTime(session, client)
-	sendToSession(session, "created", sessionID, client)
-
-	readAndProcessMessages(conn, session, client)
-}
-
-func handleWebSocketJoin(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgradeConnection(w, r)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	client, session := createClientAndSession(r, conn)
-	session.clients[client] = true
-	sendStartingTimestampAndElapsedTime(session, client)
-
-	readAndProcessMessages(conn, session, client)
-}
-
-func upgradeConnection(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error) {
-	conn, err := upgrader.Upgrade(w, r, nil)
-	return conn, err
-}
-
-func createClientAndSession(r *http.Request, conn *websocket.Conn) (*Client, *Session) {
-	client := &Client{conn: conn}
-	sessionID := r.URL.Query().Get("session")
-	session := getSession(sessionID)
-	return client, session
-}
-
-func sendStartingTimestampAndElapsedTime(session *Session, client *Client) {
-	if session.startTime > 0 || session.elapsedTime > 0 {
-		sendToSession(session, "play", strconv.FormatInt(session.startTime, 10)+","+strconv.Itoa(session.elapsedTime), client)
+func checkAndCloseSessionIfEmpty(session *Session) {
+	if len(session.clients) == 0 {
+		session.quit <- true
+		sessionsMutex.Lock()
+		delete(sessions, session.id)
+		sessionsMutex.Unlock()
 	}
 }
+
+//message
 
 func readAndProcessMessages(conn *websocket.Conn, session *Session, client *Client) {
 	for {
@@ -126,38 +138,14 @@ func readAndProcessMessages(conn *websocket.Conn, session *Session, client *Clie
 
 		switch msg.Action {
 		case "pause":
-			sendToSession(session, "pause", msg.Data, nil)
+			sendMessageToSession(session, "pause", msg.Data, nil)
 		case "play":
-			sendToSession(session, "play", msg.Data, nil)
+			sendMessageToSession(session, "play", msg.Data, nil)
 		}
 	}
 }
 
-func checkAndCloseSessionIfEmpty(session *Session) {
-	if len(session.clients) == 0 {
-		session.quit <- true
-		sessionsMutex.Lock()
-		delete(sessions, session.id)
-		sessionsMutex.Unlock()
-	}
-}
-
-func calculateSessionTime(session *Session, action string) {
-	now := time.Now().UnixNano() / int64(time.Millisecond)
-	if action == "play" {
-		if session.startTime == 0 {
-			session.startTime = now
-		}
-	} else if action == "pause" {
-		if session.startTime != 0 {
-			elapsed := now - session.startTime
-			session.elapsedTime += int(elapsed) / 1000
-			session.startTime = 0
-		}
-	}
-}
-
-func sendToSession(session *Session, action string, data string, targetClient *Client) {
+func sendMessageToSession(session *Session, action string, data string, targetClient *Client) {
 	calculateSessionTime(session, action)
 
 	message := Message{
@@ -178,39 +166,83 @@ func sendToSession(session *Session, action string, data string, targetClient *C
 	}
 }
 
-func getSession(sessionID string) *Session {
-	sessionsMutex.Lock()
-	defer sessionsMutex.Unlock()
-	session, ok := sessions[sessionID]
-	if !ok {
-		session = &Session{
-			id:        sessionID,
-			clients:   make(map[*Client]bool),
-			broadcast: make(chan []byte),
-			quit:      make(chan bool),
+func calculateSessionTime(session *Session, action string) {
+	now := time.Now().UnixNano() / int64(time.Millisecond)
+	if action == "play" {
+		if session.startTime == 0 {
+			session.startTime = now
 		}
-		go session.broadcastMessages()
-		sessions[sessionID] = session
+	} else if action == "pause" {
+		if session.startTime != 0 {
+			elapsed := now - session.startTime
+			session.elapsedTime += int(elapsed) / 1000
+			session.startTime = 0
+		}
 	}
-
-	return session
 }
 
-func generateRandomSessionID() string {
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	const length = 8
+//websocket
 
-	b := make([]byte, length)
-	for i := range b {
-		b[i] = charset[rand.Intn(len(charset))]
+func handleWebSocketCreate(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgradeConnection(w, r)
+	if err != nil {
+		log.Println(err)
+		return
 	}
 
-	return string(b)
+	sessionID := generateRandomSessionID()
+	session := createSession(sessionID)
+	client := &Client{conn: conn}
+	session.clients[client] = true
+	sendStartingTimestampAndElapsedTime(session, client)
+	sendMessageToSession(session, "created", sessionID, client)
+
+	readAndProcessMessages(conn, session, client)
 }
 
-func main() {
-	http.HandleFunc("/ws/join", handleWebSocketJoin)
-	http.HandleFunc("/ws/create", handleWebSocketCreate)
-	fmt.Println("Server started at :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+func handleWebSocketJoin(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgradeConnection(w, r)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	sessionID := r.URL.Query().Get("session")
+	session, err := getSession(sessionID)
+	if err != nil {
+
+		message := Message{
+			Action: "error",
+			Data:   "Session not found",
+		}
+		messageBytes, _ := json.Marshal(message)
+		conn.WriteMessage(websocket.TextMessage, messageBytes)
+
+		conn.Close()
+		return
+	}
+
+	client := &Client{conn: conn}
+	session.clients[client] = true
+	sendStartingTimestampAndElapsedTime(session, client)
+
+	readAndProcessMessages(conn, session, client)
+}
+
+func upgradeConnection(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+	return conn, err
+}
+
+func createClientAndSession(r *http.Request, conn *websocket.Conn) (*Client, *Session, error) {
+	client := &Client{conn: conn}
+	sessionID := r.URL.Query().Get("session")
+	session, error := getSession(sessionID)
+	return client, session, error
+}
+
+func sendStartingTimestampAndElapsedTime(session *Session, client *Client) {
+	if session.startTime > 0 || session.elapsedTime > 0 {
+		sendMessageToSession(session, "play", strconv.FormatInt(session.startTime, 10)+","+strconv.Itoa(session.elapsedTime), client)
+	}
 }
