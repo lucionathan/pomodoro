@@ -2,8 +2,10 @@ package websocket
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/websocket"
 	"github.com/lucionathan/pomodoro/cmd/web/client"
@@ -23,8 +25,13 @@ func HandleWebSocketCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	publicParam := r.URL.Query().Get("public")
+	fmt.Println(publicParam)
+	isPublic, _ := strconv.ParseBool(publicParam)
+	fmt.Println(isPublic)
+
 	sessionID := session.GenerateRandomSessionID()
-	sess := session.CreateSession(sessionID)
+	sess := session.CreateSession(sessionID, isPublic)
 	cl := &client.Client{Conn: conn}
 	sess.Clients[cl] = true
 	session.SendStartingTimestampAndElapsedTime(sess, cl)

@@ -7,6 +7,8 @@ import {
   FormLabel,
   Input,
   Text,
+  Switch,
+  HStack,
 } from "@chakra-ui/react";
 
 const Pomodoro: React.FC = () => {
@@ -14,6 +16,8 @@ const Pomodoro: React.FC = () => {
   const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
   const [sessionID, setSessionID] = useState<string | null>(null);
   const [ws, setWebSocket] = useState<WebSocket | null>(null);
+  const [isPublic, setIsPublic] = useState(true);
+
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const studyTime = 25 * 60;
@@ -56,17 +60,18 @@ const Pomodoro: React.FC = () => {
   }, [ws, intervalId]); 
 
   const setupWebSocket = (path: string) => {
-    const newWs = new WebSocket(`ws://localhost:8080${path}?session=${sessionID}`);
+    const newWs = new WebSocket(`ws://localhost:8080${path}`);
     setWebSocket(newWs);
   };
 
   const handleCreateSession = () => {
-    setupWebSocket('/ws/create');
+    console.log(isPublic);
+    setupWebSocket(`/ws/create?public=${isPublic}`);
   };
 
   const handleJoinSession = () => {
     if (!sessionID) return;
-    setupWebSocket('/ws/join');
+    setupWebSocket(`/ws/join?session=${sessionID}`);
   };
 
   const handlePause = () => {
@@ -136,6 +141,16 @@ const Pomodoro: React.FC = () => {
           size="sm"
           fontSize="xl"
         />
+        <HStack mt={4}>
+          <Switch
+            id="public-switch"
+            isChecked={isPublic}
+            onChange={(e) => setIsPublic(e.target.checked)}
+          />
+          <FormLabel htmlFor="public-switch" mb="0">
+            Public Session
+          </FormLabel>
+      </HStack>
         <Flex>
           <Button onClick={handleCreateSession} mr={2}>
             Create Session
