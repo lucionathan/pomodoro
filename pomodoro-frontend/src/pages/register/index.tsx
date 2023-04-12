@@ -11,19 +11,36 @@ import {
   Input,
   Text,
 } from "@chakra-ui/react";
-import { RouteHandlerManager } from 'next/dist/server/future/route-handler-managers/route-handler-manager';
 
 const Register: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const router = useRouter(); // Add this line
+  const router = useRouter();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     try {
-      await auth.createUserWithEmailAndPassword(email, password);
-      router.push('/login');
+      const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+      const user = userCredential.user;
+  
+      if (user) {
+        const response = await fetch('/api/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userID: user.uid, email }),
+        });
+  
+        if (response.ok) {
+          router.push('/login');
+        } else {
+          console.error('Error registering:', response.statusText);
+        }
+      } else {
+        console.error('Error registering: User not created');
+      }
     } catch (error) {
       console.error('Error registering:', error);
     }
