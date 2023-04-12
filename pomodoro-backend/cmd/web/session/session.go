@@ -70,14 +70,10 @@ func GetPublicSessions(w http.ResponseWriter, r *http.Request) {
 	var sessionsAux []Session
 
 	for _, v := range sessions {
-		fmt.Println(v.Public)
 		if v.Public {
-
 			sessionsAux = append(sessionsAux, *v)
 		}
 	}
-
-	fmt.Println(sessionsAux)
 
 	jsonResp, err := json.Marshal(sessionsAux)
 	// fmt.Println(string(jsonResp))
@@ -86,7 +82,6 @@ func GetPublicSessions(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("Error happened in JSON marshal. Err: %s", err)
 	}
 
-	fmt.Println(string(jsonResp))
 	w.Write(jsonResp)
 	return
 }

@@ -2,7 +2,6 @@ package websocket
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -26,9 +25,7 @@ func HandleWebSocketCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	publicParam := r.URL.Query().Get("public")
-	fmt.Println(publicParam)
 	isPublic, _ := strconv.ParseBool(publicParam)
-	fmt.Println(isPublic)
 
 	sessionID := session.GenerateRandomSessionID()
 	sess := session.CreateSession(sessionID, isPublic)
