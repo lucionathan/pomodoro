@@ -42,7 +42,7 @@ func getCredentials() []byte {
 	return credentialsJSONBytes
 }
 
-func GetClient() *firestore.Client {
+func GetClient() (context.Context, *firestore.Client) {
 
 	ctx := context.Background()
 	credentials := getCredentials()
@@ -57,5 +57,5 @@ func GetClient() *firestore.Client {
 		log.Fatalln(err)
 	}
 
-	return client
+	return ctx, client
 }

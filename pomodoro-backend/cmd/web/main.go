@@ -12,6 +12,9 @@ import (
 )
 
 func createUserHandler(w http.ResponseWriter, r *http.Request) {
+
+	ctx, client := firestore.GetClient()
+
 	if r.Method != "POST" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -30,14 +33,23 @@ func createUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(requestData.UserID)
+	userCollection := client.Collection("users")
+
+	_, fireErr := userCollection.Doc(requestData.UserID).Set(ctx, map[string]interface{}{
+		"email": "teste@email.com",
+	})
+
+	if fireErr != nil {
+		log.Printf("An error has occurred: %s", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
+	return
 }
 
 func main() {
-	client := firestore.GetClient()
-	fmt.Print(client)
 	http.HandleFunc("/ws/join", websocket.HandleWebSocketJoin)
 	http.HandleFunc("/ws/create", websocket.HandleWebSocketCreate)
 	http.HandleFunc("/createUser", createUserHandler)
