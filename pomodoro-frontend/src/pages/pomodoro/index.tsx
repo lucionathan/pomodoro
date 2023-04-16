@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Button,
@@ -9,7 +9,12 @@ import {
   Text,
   Switch,
   HStack,
+  useColorMode,
+  IconButton,
+  CircularProgress,
+  VStack,
 } from "@chakra-ui/react";
+import { MoonIcon, SunIcon } from "@chakra-ui/icons";
 
 const Pomodoro: React.FC = () => {
   const [time, setTime] = useState(0);
@@ -18,7 +23,7 @@ const Pomodoro: React.FC = () => {
   const [ws, setWebSocket] = useState<WebSocket | null>(null);
   const [isPublic, setIsPublic] = useState(true);
   const [friendEmail, setFriendEmail] = useState('');
-
+  const { colorMode, toggleColorMode } = useColorMode();
 
   const handleSendEmailInvite = async () => {
     if (!sessionID || !friendEmail) return;
@@ -136,19 +141,38 @@ const Pomodoro: React.FC = () => {
     return operationType;
   }
 
+  const progressValue = () => {
+    const checkType = time % (studyTime + restingTime);
+    const decreasingTime = checkType < studyTime ? studyTime - checkType : restingTime - (checkType - studyTime);
+  
+    if (checkType < studyTime) {
+      return ((studyTime - decreasingTime) / studyTime) * 100;
+    } else {
+      return ((restingTime - decreasingTime) / restingTime) * 100;
+    }
+  };
+
   return (
-    <Box
+    <VStack
+      spacing={10}
       display="flex"
-      flexDirection="column"
       alignItems="center"
       justifyContent="center"
-      height="100vh"
-      mx="auto"
+      minHeight="100vh"
+      px={4}
+      bgColor={colorMode === "light" ? "gray.100" : "gray.700"}
     >
-
-      <Text fontSize="5xl" fontWeight="bold">
-        Pomodoro Timer
-      </Text>
+      <Flex width="100%" justifyContent="flex-end">
+        <IconButton
+          icon={colorMode === "light" ? <MoonIcon /> : <SunIcon />}
+          onClick={toggleColorMode}
+        />
+      </Flex>
+      <Box>
+        <Text fontSize="5xl" fontWeight="bold">
+          Pomodoro Timer
+        </Text>
+      </Box>
       <Box>
         <audio ref={audioRef} src="/alarm.mp3" />
       </Box>
@@ -171,7 +195,7 @@ const Pomodoro: React.FC = () => {
           <FormLabel htmlFor="public-switch" mb="0">
             Public Session
           </FormLabel>
-      </HStack>
+        </HStack>
         <Flex>
           <Button onClick={handleCreateSession} mr={2}>
             Create Session
@@ -179,17 +203,34 @@ const Pomodoro: React.FC = () => {
           <Button onClick={handleJoinSession}>Join Session</Button>
         </Flex>
       </FormControl>
-      <Text fontSize="4xl" fontWeight="bold" mt="6">{displayType()}</Text>
-      <Text fontSize="6xl" fontWeight="bold" my={4}>
-        {displayTime()}
-      </Text>
+      <Box>
+        <CircularProgress
+          value={progressValue()}
+          size="300px"
+          thickness="12px"
+          color="red.400"
+          capIsRound
+          trackColor={colorMode === "light" ? "gray.300" : "gray.600"}
+        >
+          <Box>
+            <Text fontSize="4xl" fontWeight="bold">
+              {displayType()}
+            </Text>
+            <Text fontSize="6xl" fontWeight="bold" my={4}>
+              {displayTime()}
+            </Text>
+          </Box>
+        </CircularProgress>
+
+      </Box>
       <Flex>
         <Button fontSize="xl" onClick={handlePause} mr={2}>
           Pause
         </Button>
-        <Button fontSize="xl" onClick={handlePlay}>Play</Button>
+        <Button fontSize="xl" onClick={handlePlay}>
+          Play
+        </Button>
       </Flex>
-
       <Input
         type="email"
         id="friend-email"
@@ -203,8 +244,9 @@ const Pomodoro: React.FC = () => {
       <Button onClick={handleSendEmailInvite}>
         Send Email Invite
       </Button>
-    </Box>
+    </VStack>
   );
+
 };
 
 export default Pomodoro;
