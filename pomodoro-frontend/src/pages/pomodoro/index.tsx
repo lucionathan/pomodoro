@@ -17,6 +17,27 @@ const Pomodoro: React.FC = () => {
   const [sessionID, setSessionID] = useState<string | null>(null);
   const [ws, setWebSocket] = useState<WebSocket | null>(null);
   const [isPublic, setIsPublic] = useState(true);
+  const [friendEmail, setFriendEmail] = useState('');
+
+
+  const handleSendEmailInvite = async () => {
+    if (!sessionID || !friendEmail) return;
+
+    const res = await fetch('/api/send-invite-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ friendEmail, sessionID }),
+    });
+
+    if (res.ok) {
+      alert('Email invite sent successfully!');
+    } else {
+      const data = await res.json();
+      alert(`Error sending email invite: ${data.message}`);
+    }
+  };
 
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -168,6 +189,20 @@ const Pomodoro: React.FC = () => {
         </Button>
         <Button fontSize="xl" onClick={handlePlay}>Play</Button>
       </Flex>
+
+      <Input
+        type="email"
+        id="friend-email"
+        placeholder="Friend's email"
+        mb={4}
+        size="sm"
+        fontSize="xl"
+        value={friendEmail}
+        onChange={(e) => setFriendEmail(e.target.value)}
+      />
+      <Button onClick={handleSendEmailInvite}>
+        Send Email Invite
+      </Button>
     </Box>
   );
 };

@@ -5,14 +5,10 @@ const register = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method === 'POST') {
     const { userID, email } = req.body;
 
-    const userData = {
-      email,
-    };
-
     try {
-      // Replace 'http://localhost:8080' with your Go backend URL if different
       const response = await axios.post('http://localhost:8080/createUser', {
-        userID
+        userID,
+        userEmail: email
       });
 
       if (response.status === 200) {

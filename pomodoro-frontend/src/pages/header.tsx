@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Button, Flex } from '@chakra-ui/react';
+import { Box, Button, Flex, Heading, Link, Spacer } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
 import { User } from 'firebase/auth';
 import { auth } from '../../config/firebaseConfig';
@@ -12,7 +12,7 @@ const Header: React.FC = () => {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
       setUser(currentUser as User);
     });
-  
+
     return () => {
       unsubscribe();
     };
@@ -28,17 +28,25 @@ const Header: React.FC = () => {
   };
 
   return (
-    <Box bg="teal.400" p={4} color="white">
-      <Flex justifyContent="space-between" alignItems="center">
+    <Box bg="blue.600" p={4} color="white">
+      <Flex justifyContent="space-between" alignItems="center" w="100%">
         <Box>
-          {/* Add your application logo or title here */}
-          <span>Pomodoro</span>
+          {user && (
+            <Button onClick={handleLogout} variant="outline" borderColor="white" color="white">
+              Log out
+            </Button>
+          )}
         </Box>
-        {user && (
-          <Box>
-            <Button onClick={handleLogout}>Log out</Button>
-          </Box>
-        )}
+        <Spacer />
+        <Box>
+          <Link onClick={() => router.push('/')}>
+            <Heading as="h1" size="lg" fontFamily="'Roboto', sans-serif">
+              Pomosync
+            </Heading>
+          </Link>
+        </Box>
+        <Spacer />
+        <Box />
       </Flex>
     </Box>
   );

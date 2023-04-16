@@ -21,7 +21,8 @@ func createUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var requestData struct {
-		UserID string `json:"userID"`
+		UserID    string `json:"userID"`
+		UserEmail string `json:"userEmail"`
 	}
 
 	err := json.NewDecoder(r.Body).Decode(&requestData)
@@ -36,7 +37,8 @@ func createUserHandler(w http.ResponseWriter, r *http.Request) {
 	userCollection := client.Collection("users")
 
 	_, fireErr := userCollection.Doc(requestData.UserID).Set(ctx, map[string]interface{}{
-		"email": "teste@email.com",
+		"email":    requestData.UserEmail,
+		"username": "teste",
 	})
 
 	if fireErr != nil {
