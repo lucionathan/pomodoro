@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Button, Flex, Heading, Link, Spacer } from '@chakra-ui/react';
+import { Box, Button, Flex, Heading, Link } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
 import { User } from 'firebase/auth';
 import { auth } from '../../config/firebaseConfig';
@@ -29,7 +29,7 @@ const Header: React.FC = () => {
 
   return (
     <Box bg="red.400" p={4} color="white">
-      <Flex justifyContent="space-between" alignItems="center" w="100%">
+      <Flex alignItems="center" w="100%">
         <Box>
           {user && (
             <Button onClick={handleLogout} variant="outline" borderColor="white" color="white">
@@ -37,16 +37,13 @@ const Header: React.FC = () => {
             </Button>
           )}
         </Box>
-        <Spacer />
-        <Box>
+        <Box position="absolute" left="50%" transform="translateX(-50%)">
           <Link onClick={() => router.push('/')}>
             <Heading as="h1" size="lg" fontFamily="'Roboto', sans-serif">
               Pomosync
             </Heading>
           </Link>
         </Box>
-        <Spacer />
-        <Box />
       </Flex>
     </Box>
   );

@@ -14,16 +14,39 @@ import {
   CircularProgress,
   VStack,
 } from "@chakra-ui/react";
+import { useRouter } from "next/router";
 import { MoonIcon, SunIcon } from "@chakra-ui/icons";
+import { useQueryState } from "../useQueryState";
+
+interface PomodoroProps {
+  initialSessionID?: string;
+}
 
 const Pomodoro: React.FC = () => {
+
+  const router = useRouter();
+  const { createSession } = router.query;
+  const [sessionID, setSessionID] = useQueryState('sessionID');
+
+
   const [time, setTime] = useState(0);
   const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
-  const [sessionID, setSessionID] = useState<string | null>(null);
   const [ws, setWebSocket] = useState<WebSocket | null>(null);
   const [isPublic, setIsPublic] = useState(true);
   const [friendEmail, setFriendEmail] = useState('');
   const { colorMode, toggleColorMode } = useColorMode();
+
+  useEffect(() => {
+    if (sessionID) {
+      handleJoinSession();
+    }
+  }, [sessionID]);
+
+  useEffect(() => {
+    if (createSession === 'true') {
+      handleCreateSession();
+    }
+  }, [createSession]);
 
   const handleSendEmailInvite = async () => {
     if (!sessionID || !friendEmail) return;
@@ -85,14 +108,27 @@ const Pomodoro: React.FC = () => {
     };
   }, [ws, intervalId]); 
 
-  const setupWebSocket = (path: string) => {
+  const setupWebSocket = (path: string): WebSocket => {
     const newWs = new WebSocket(`ws://localhost:8080${path}`);
     setWebSocket(newWs);
+    return newWs;
   };
 
   const handleCreateSession = () => {
     console.log(isPublic);
-    setupWebSocket(`/ws/create?public=${isPublic}`);
+    const newWs = setupWebSocket(`/ws/create?public=${isPublic}`);
+  
+    // Listen for the 'created' event
+    newWs.addEventListener('message', (event) => {
+      const message = JSON.parse(event.data);
+      if (message.action === 'created') {
+        const newSessionID = message.data;
+        setSessionID(newSessionID);
+  
+        // Redirect to the Pomodoro page with the new session ID
+        router.push(`/pomodoro?sessionID=${newSessionID}`);
+      }
+    });
   };
 
   const handleJoinSession = () => {
@@ -170,40 +206,21 @@ const Pomodoro: React.FC = () => {
       </Flex>
       <Box>
         <Text fontSize="5xl" fontWeight="bold">
-          Pomodoro Timer
+          Pomosync
         </Text>
       </Box>
       <Box>
         <audio ref={audioRef} src="/alarm.mp3" />
       </Box>
-      <FormControl maxW="xs" mt={8}>
-        <FormLabel fontSize="2xl" htmlFor="session-id">Session ID: {sessionID}</FormLabel>
-        <Input
-          type="text"
-          id="session-id"
-          onChange={(e) => setSessionID(e.target.value)}
-          mb={4}
-          size="sm"
-          fontSize="xl"
-        />
-        <HStack mt={4}>
-          <Switch
-            id="public-switch"
-            isChecked={isPublic}
-            onChange={(e) => setIsPublic(e.target.checked)}
-          />
-          <FormLabel htmlFor="public-switch" mb="0">
-            Public Session
+      <FormControl maxW="xs" mt={8} alignSelf="center">
+        <Flex alignItems="center" justifyContent="center">
+          <FormLabel fontSize="2xl" htmlFor="session-id">
+            Session ID: {sessionID}
           </FormLabel>
-        </HStack>
-        <Flex>
-          <Button onClick={handleCreateSession} mr={2}>
-            Create Session
-          </Button>
-          <Button onClick={handleJoinSession}>Join Session</Button>
         </Flex>
       </FormControl>
       <Box>
+      <Box position="relative">
         <CircularProgress
           value={progressValue()}
           size="300px"
@@ -211,16 +228,22 @@ const Pomodoro: React.FC = () => {
           color="red.400"
           capIsRound
           trackColor={colorMode === "light" ? "gray.300" : "gray.600"}
+        />
+        <VStack
+          position="absolute"
+          top="50%"
+          left="50%"
+          transform="translate(-50%, -50%)"
+          zIndex="1"
         >
-          <Box>
-            <Text fontSize="4xl" fontWeight="bold">
-              {displayType()}
-            </Text>
-            <Text fontSize="6xl" fontWeight="bold" my={4}>
-              {displayTime()}
-            </Text>
-          </Box>
-        </CircularProgress>
+          <Text fontSize="4xl" fontWeight="bold">
+            {displayType()}
+          </Text>
+          <Text fontSize="6xl" fontWeight="bold" my={4}>
+            {displayTime()}
+          </Text>
+        </VStack>
+      </Box>
 
       </Box>
       <Flex>
@@ -248,5 +271,6 @@ const Pomodoro: React.FC = () => {
   );
 
 };
+
 
 export default Pomodoro;
