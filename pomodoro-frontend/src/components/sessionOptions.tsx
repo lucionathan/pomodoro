@@ -11,9 +11,9 @@ const SessionOptions: React.FC = () => {
 
   return (
     <VStack spacing={4}>
-      <Button onClick={() => router.push('/public-sessions')}>List Public Sessions</Button>
+      <Button onClick={() => router.push('/publicSessions')}>List Public Sessions</Button>
       <Button onClick={handleCreateSession}>Create Session</Button>
-      <Button onClick={() => router.push('/join-session')}>Join Session</Button>
+      <Button onClick={() => router.push('/joinSession')}>Join Session</Button>
     </VStack>
   );
 };
