@@ -147,6 +147,8 @@ func ReadAndProcessMessages(conn *websocket.Conn, session *Session, client *clie
 			SendMessageToSession(session, "pause", msg.Data, nil)
 		case "play":
 			SendMessageToSession(session, "play", msg.Data, nil)
+		case "chat":
+			SendMessageToSession(session, "chat", msg.Data, nil)
 		}
 	}
 }

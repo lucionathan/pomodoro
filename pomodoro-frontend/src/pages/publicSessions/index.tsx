@@ -24,7 +24,7 @@ const PublicSessions: React.FC = () => {
     }, []);
 
   return (
-    <VStack spacing={4}>
+    <VStack spacing={7} mt={10}>
       {sessions.map((session) => (
         <Box key={session.id}>
           <Button onClick={() => router.push(`/pomodoro?sessionID=${session.id}`)}>

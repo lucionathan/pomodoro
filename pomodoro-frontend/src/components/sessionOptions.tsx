@@ -10,10 +10,10 @@ const SessionOptions: React.FC = () => {
   };
 
   return (
-    <VStack spacing={4}>
-      <Button onClick={() => router.push('/publicSessions')}>List Public Sessions</Button>
-      <Button onClick={handleCreateSession}>Create Session</Button>
-      <Button onClick={() => router.push('/joinSession')}>Join Session</Button>
+    <VStack spacing={7}>
+    <Button mt={10} size='lg' onClick={() => router.push('/publicSessions')}>List Public Sessions</Button>
+      <Button size='lg' onClick={handleCreateSession}>Create Session</Button>
+      <Button size='lg' onClick={() => router.push('/joinSession')}>Join Session</Button>
     </VStack>
   );
 };
