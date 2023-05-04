@@ -11,27 +11,20 @@ const JoinSession: React.FC = () => {
   };
 
   return (
-    <VStack
-      spacing={4}
-      display="flex"
-      alignItems="center"
-      justifyContent="center"
-      minHeight="100vh"
-      px={4}
-    >
+    <VStack spacing={4}>
       <Box>
         <FormControl>
-          <FormLabel fontSize={'3xl'}>Session ID: {sessionID}</FormLabel>
+          <FormLabel fontSize={'lg'}>Session ID</FormLabel>
           <Input
             type="text"
             value={sessionID}
             onChange={(e) => setSessionID(e.target.value)}
           />
-          <Button mt={4} onClick={handleJoinSession}>
-            Join Session
-          </Button>
         </FormControl>
       </Box>
+      <Button onClick={handleJoinSession}>
+        Join Session
+      </Button>
     </VStack>
   );
 };

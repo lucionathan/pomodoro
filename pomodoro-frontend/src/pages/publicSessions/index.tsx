@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { VStack, Box, Button } from '@chakra-ui/react';
+import { VStack, Box, Button, Text } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
 
 interface Session {
@@ -24,15 +24,18 @@ const PublicSessions: React.FC = () => {
     }, []);
 
   return (
-    <VStack spacing={7} mt={10}>
-      {sessions.map((session) => (
-        <Box key={session.id}>
-          <Button onClick={() => router.push(`/pomodoro?sessionID=${session.id}`)}>
-            Join Session {session.id}
-          </Button>
-        </Box>
-      ))}
-    </VStack>
+    <Box borderWidth={1} borderRadius="md" boxShadow="md" p={5} w="300px" maxH="400px" overflowY="auto">
+      <Text fontSize="xl" mb={3}>Public Sessions</Text>
+      <VStack spacing={3}>
+        {sessions.map((session) => (
+          <Box key={session.id}>
+                        <Button onClick={() => router.push(`/pomodoro?sessionID=${session.id}`)}>
+              Join Session {session.id}
+            </Button>
+          </Box>
+        ))}
+      </VStack>
+    </Box>
   );
 };
 

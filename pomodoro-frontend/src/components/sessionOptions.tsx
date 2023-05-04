@@ -1,6 +1,9 @@
 import React from 'react';
 import { useRouter } from 'next/router';
-import { Box, Button, VStack } from '@chakra-ui/react';
+import { Box, Button, VStack, Flex } from '@chakra-ui/react';
+import JoinSession from '@/pages/joinSession';
+import PublicSessions from '@/pages/publicSessions';
+import CreateSession from './createSession';
 
 const SessionOptions: React.FC = () => {
   const router = useRouter();
@@ -10,11 +13,19 @@ const SessionOptions: React.FC = () => {
   };
 
   return (
-    <VStack spacing={7}>
-    <Button mt={10} size='lg' onClick={() => router.push('/publicSessions')}>List Public Sessions</Button>
-      <Button size='lg' onClick={handleCreateSession}>Create Session</Button>
-      <Button size='lg' onClick={() => router.push('/joinSession')}>Join Session</Button>
-    </VStack>
+    <Flex alignItems="start" justifyContent="center" minHeight="100vh">
+      <Box spacing={5} p={5} borderWidth={1} mt={10} borderRadius="md" boxShadow="md">
+        <CreateSession />
+      </Box>
+
+      <Box spacing={5} p={5} borderWidth={1} ml={10} mt={10} borderRadius="md" boxShadow="md">
+        <JoinSession />
+      </Box>
+
+      <Box ml={10} mt={10}>
+        <PublicSessions />
+      </Box>
+    </Flex>
   );
 };
 
