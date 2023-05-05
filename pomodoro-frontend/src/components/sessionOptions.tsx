@@ -6,12 +6,7 @@ import PublicSessions from '@/pages/publicSessions';
 import CreateSession from './createSession';
 
 const SessionOptions: React.FC = () => {
-  const router = useRouter();
-
-  const handleCreateSession = () => {
-    router.push('/pomodoro?createSession=true');
-  };
-
+  
   return (
     <Flex alignItems="start" justifyContent="center" minHeight="100vh">
       <Box spacing={5} p={5} borderWidth={1} mt={10} borderRadius="md" boxShadow="md">

@@ -15,9 +15,20 @@ const PublicSessions: React.FC = () => {
 
     useEffect(() => {
         const fetchSessions = async () => {
-        //   const res = await fetch('http://localhost:8080/getSessions');
+          try {
+            const res = await fetch('http://localhost:8080/getSessions');
+            const data = await res.json(); // Parse the JSON response
+            console.log('Data received:', data); // Log the parsed data
+            if(data === null) {
+              setSessions([]);
+            } else {
+              setSessions(data);
+            }
+          } catch (err) {
+            console.error(err);
+          }
         //   const data = await res.json();
-                setSessions([{"id":"tqwcFiUI","public":true,"startTime":0,"elapsedTime":0},{"id":"LzXv2fcN","public":true,"startTime":0,"elapsedTime":6}]);
+                // setSessions([{"id":"tqwcFiUI","public":true,"startTime":0,"elapsedTime":0},{"id":"LzXv2fcN","public":true,"startTime":0,"elapsedTime":6}]);
         };
     fetchSessions();
 

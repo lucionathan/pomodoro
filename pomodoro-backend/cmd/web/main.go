@@ -11,6 +11,19 @@ import (
 	"github.com/lucionathan/pomodoro/cmd/web/websocket"
 )
 
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 func createUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	ctx, client := firestore.GetClient()
@@ -52,10 +65,10 @@ func createUserHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/ws/join", websocket.HandleWebSocketJoin)
-	http.HandleFunc("/ws/create", websocket.HandleWebSocketCreate)
-	http.HandleFunc("/createUser", createUserHandler)
-	http.HandleFunc("/getSessions", session.GetPublicSessions)
+	http.Handle("/ws/join", corsMiddleware(http.HandlerFunc(websocket.HandleWebSocketJoin)))
+	http.Handle("/ws/create", corsMiddleware(http.HandlerFunc(websocket.HandleWebSocketCreate)))
+	http.Handle("/createUser", corsMiddleware(http.HandlerFunc(createUserHandler)))
+	http.Handle("/getSessions", corsMiddleware(http.HandlerFunc(session.GetPublicSessions)))
 	fmt.Println("Server started at :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }

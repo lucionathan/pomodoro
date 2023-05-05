@@ -220,7 +220,7 @@ const Pomodoro: React.FC = () => {
             </FormLabel>
           </Flex>
         </FormControl>
-        <Box>
+          
         <Box position="relative">
           <CircularProgress
             value={progressValue()}
@@ -246,7 +246,6 @@ const Pomodoro: React.FC = () => {
           </VStack>
         </Box>
 
-        </Box>
         <Box mb={40}>
 
         <Flex mb={100}>
