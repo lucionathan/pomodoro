@@ -17,8 +17,8 @@ const PublicSessions: React.FC = () => {
         const fetchSessions = async () => {
           try {
             const res = await fetch('http://localhost:8080/getSessions');
-            const data = await res.json(); // Parse the JSON response
-            console.log('Data received:', data); // Log the parsed data
+            const data = await res.json(); 
+
             if(data === null) {
               setSessions([]);
             } else {
@@ -27,8 +27,6 @@ const PublicSessions: React.FC = () => {
           } catch (err) {
             console.error(err);
           }
-        //   const data = await res.json();
-                // setSessions([{"id":"tqwcFiUI","public":true,"startTime":0,"elapsedTime":0},{"id":"LzXv2fcN","public":true,"startTime":0,"elapsedTime":6}]);
         };
     fetchSessions();
 
