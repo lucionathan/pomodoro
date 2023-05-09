@@ -117,11 +117,12 @@ func (s *Session) BroadcastMessages() {
 }
 
 func checkAndCloseSessionIfEmpty(session *Session) {
+	sessionsMutex.Lock()
+	defer sessionsMutex.Unlock()
+
 	if len(session.Clients) == 0 {
 		session.Quit <- true
-		sessionsMutex.Lock()
 		delete(sessions, session.Id)
-		sessionsMutex.Unlock()
 	}
 }
 

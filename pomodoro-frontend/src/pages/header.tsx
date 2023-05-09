@@ -28,7 +28,7 @@ const Header: React.FC = () => {
   };
 
   return (
-    <Box bg="red.400" p={4} color="white">
+    <Box bg="red.500" p={4} color="white">
       <Flex alignItems="center" w="100%">
         <Box>
           {user && (
