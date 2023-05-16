@@ -13,6 +13,7 @@ import {
   IconButton,
   CircularProgress,
   VStack,
+  Grid
 } from "@chakra-ui/react";
 import { useRouter } from "next/router";
 import { MoonIcon, SunIcon } from "@chakra-ui/icons";
@@ -190,109 +191,99 @@ const Pomodoro: React.FC = () => {
   };
 
   return (
-    <Flex
-    width="100%"
-    minHeight="100vh"
-    alignItems="center"
-    justifyContent="center"
-    px={4}
-    >
-      <VStack
-        spacing={6}
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-        minHeight="auto"
-        px={4}
-      >
-        <Box>
-          <Text fontSize="5xl" fontWeight="bold">
-            PomoSync
-          </Text>
-        </Box>
-        <Box>
-          <audio ref={audioRef} src="/alarm.mp3" />
-        </Box>
-        <FormControl maxW="xs" mt={8} alignSelf="center">
-          <Flex alignItems="center" justifyContent="center">
-            <FormLabel fontSize="2xl" htmlFor="session-id">
-              Session ID: {sessionID}
-            </FormLabel>
-          </Flex>
-        </FormControl>
-          
-        <Box position="relative">
-          <CircularProgress
-            value={progressValue()}
-            size="300px"
-            thickness="12px"
-            color="red.400"
-            capIsRound
-            trackColor={colorMode === "light" ? "gray.300" : "gray.600"}
-          />
-          <VStack
-            position="absolute"
-            top="50%"
-            left="50%"
-            transform="translate(-50%, -50%)"
-            zIndex="1"
-          >
-            <Text fontSize="4xl" fontWeight="bold">
-              {displayType()}
-            </Text>
-            <Text fontSize="6xl" fontWeight="bold" my={4}>
-              {displayTime()}
-            </Text>
+    <Flex direction="column" justifyContent="center" alignItems="center" height="100vh">
+      <Grid templateColumns="2fr 1fr" gap={6} p={6}>
+        <Box bg={'red.900'} borderRadius={'lg'} p={5} minH="50vh" alignContent={"center"}>
+          <VStack spacing={4} w="100%">
+            
+            <Box>
+              <Text fontSize="5xl" fontWeight="bold" color={"white"}>
+                PomoSync
+              </Text>
+            </Box>
+            <Box>
+              <audio ref={audioRef} src="/alarm.mp3" />
+            </Box>
+            <FormControl maxW="xs" mt={8} alignSelf="center">
+              <Flex alignItems="center" justifyContent="center">
+                <FormLabel fontSize="2xl" htmlFor="session-id" color={"white"}>
+                  Session ID: {sessionID}
+                </FormLabel>
+              </Flex>
+            </FormControl>
+            
+            <Box position="relative">
+              <CircularProgress
+                value={progressValue()}
+                size="300px"
+                thickness="12px"
+                color="red.400"
+                capIsRound
+                trackColor={colorMode === "light" ? "gray.300" : "gray.600"}
+              />
+              <VStack
+                position="absolute"
+                top="50%"
+                left="50%"
+                transform="translate(-50%, -50%)"
+                zIndex="1"
+              >
+                <Text fontSize="4xl" fontWeight="bold" color={"white"}>
+                  {displayType()}
+                </Text>
+                <Text fontSize="6xl" fontWeight="bold" my={4} color={"white"}>
+                  {displayTime()}
+                </Text>
+              </VStack>
+            </Box>
+  
+            <Box mb={40}>
+              <Flex mb={100}>
+                <Button fontSize="xl" onClick={handlePause} mr={2}>
+                  Pause
+                </Button>
+                <Button fontSize="xl" onClick={handlePlay}>
+                  Play
+                </Button>
+              </Flex>
+            </Box>
+  
+            <Box mt="30">
+              <Flex>
+                <Input
+                  _placeholder={{ color: 'white' }}
+                  color="white"       
+                  mr="5"
+                  type="email"
+                  id="friend-email"
+                  placeholder="Friend's email"
+                  mb={4}
+                  size="md"
+                  maxWidth="400px"
+                  fontSize="xl"
+                  value={friendEmail}
+                  onChange={(e) => setFriendEmail(e.target.value)}
+                />
+                <Button
+                  onClick={handleSendEmailInvite}
+                  size={"md"}
+                  width="200px"
+                >
+                  Send Email Invite
+                </Button>
+              </Flex>
+            </Box>
+  
           </VStack>
         </Box>
-
-        <Box mb={40}>
-
-        <Flex mb={100}>
-          <Button fontSize="xl" onClick={handlePause} mr={2}>
-            Pause
-          </Button>
-          <Button fontSize="xl" onClick={handlePlay}>
-            Play
-          </Button>
-        </Flex>
-
+        <Box mt={6}>
+          <Chat ws={ws} />
         </Box>
-
-        <Box mt="30">
-
-
-          <Flex>
-            <Input
-              mr="5"
-              type="email"
-              id="friend-email"
-              placeholder="Friend's email"
-              mb={4}
-              size="md"
-              maxWidth="400px"
-              fontSize="xl"
-              value={friendEmail}
-              onChange={(e) => setFriendEmail(e.target.value)}
-            />
-            <Button
-              onClick={handleSendEmailInvite}
-              size={"md"}
-              width="200px"
-            >
-              Send Email Invite
-            </Button>
-          </Flex>
-        </Box>
-
-
-      </VStack>
-
-      <Box mt={6}>
-        <Chat ws={ws} />
-      </Box>
+      </Grid>
     </Flex>
   );
+  
+  
 
 };
 

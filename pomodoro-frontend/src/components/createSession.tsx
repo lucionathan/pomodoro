@@ -16,28 +16,20 @@ const CreateSession: React.FC = () => {
       <Box>
         <FormControl>
           <Flex alignItems="center" justifyContent="space-between">
-            <FormLabel fontSize={'lg'} htmlFor="is-public" mb="0">
-              Is the session public?
+            <FormLabel fontSize={'lg'} htmlFor="is-public" mb="0" mt="5" color={'white'}>
+              Public Session
             </FormLabel>
-            <Switch colorScheme="red"
+            <Switch colorScheme="red" 
+              mt="5"
               id="is-public"
               isChecked={isPublic}
               onChange={(e) => setIsPublic(e.target.checked)}
             />
           </Flex>
-
-          <Flex alignItems="center" justifyContent="space-between" mt={9} mb={5}>
-            <FormLabel fontSize={'lg'}>Name</FormLabel>
-            <Input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </Flex>
         </FormControl>
       </Box>
       <Button onClick={handleCreateSession}>
-        Create Session
+        Create
       </Button>
     </VStack>
   );

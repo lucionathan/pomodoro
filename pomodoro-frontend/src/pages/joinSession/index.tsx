@@ -14,16 +14,20 @@ const JoinSession: React.FC = () => {
     <VStack spacing={4}>
       <Box>
         <FormControl>
-          <FormLabel fontSize={'lg'}>Session ID</FormLabel>
+          {/* <FormLabel fontSize={'lg'}>Session ID</FormLabel> */}
           <Input
+            mt='5'
             type="text"
+            _placeholder={{ color: 'white' }}
             value={sessionID}
             onChange={(e) => setSessionID(e.target.value)}
+            placeholder='Session ID'
+            color={'white'}
           />
         </FormControl>
       </Box>
       <Button onClick={handleJoinSession}>
-        Join Session
+        Join
       </Button>
     </VStack>
   );

@@ -56,11 +56,13 @@ const Chat: React.FC<ChatProps> = ({ ws }) => {
         p={2}
       >
         {messages.map((message, index) => (
-          <Text key={index}>{message}</Text>
+          <Text color="white" key={index}>{"nickname"}: {message}</Text>
         ))}
       </Box>
       <Input
         value={inputMessage}
+        _placeholder={{ color: 'white' }}
+        color="white"
         onChange={(e) => setInputMessage(e.target.value)}
         placeholder="Type your message"
       />
