@@ -33,9 +33,9 @@ const PublicSessions: React.FC = () => {
     }, []);
 
   return (
-    <Flex p={5} w="100%" maxH="300px" overflowY="auto" direction="column" justifyContent="center" alignItems="center">
+    <Flex w="100%" maxH="300px" overflowY="auto" direction="column" justifyContent="center" alignItems="center">
       <Text color={'white'} fontSize="xl" mb={3}>Public Sessions</Text>
-      <VStack spacing={3}>
+      <VStack spacing={3} p={0}>
         {sessions.map((session) => (
           <Box key={session.id} w="100%">
             <Button 

@@ -15,17 +15,24 @@ const SessionOptions: React.FC = () => {
     }
   };
 
-  const buttonWidth = useBreakpointValue({ base: "85%", md: "65%", lg: "45%", xl: "35%" });
+  const buttonWidth = useBreakpointValue({ base: "90%", md: "65%", lg: "65%", xl: "45%", "2xl": "40%", "3xl": "30%" });
 
   return (
-    <Flex justifyContent="center" alignItems="center" height="100vh">
+    <Flex justifyContent="center" alignItems="center" height="93vh">
       <Box bg={'red.900'} borderRadius={'lg'} p={5} w={buttonWidth} minH="50vh" alignContent={"center"}>
         <VStack spacing={4} w="100%">
 
           <Text color={"white"} fontWeight={'bold'} fontSize={'5xl'} mt={'20'} mb={'10'}>PomoSync</Text>
 
           <Stack spacing={0} w={buttonWidth}>
-            <Button bg={'red.100'} w="100%" onClick={() => toggleShow('create')}>
+            <Button 
+              bg={'red.100'}               
+              _hover={{ 
+                backgroundColor: "red.200", 
+                color: "black" 
+              }} 
+              w="100%" 
+              onClick={() => toggleShow('create')}>
               Create Session
             </Button>
 
@@ -37,7 +44,14 @@ const SessionOptions: React.FC = () => {
           </Stack>
 
           <Stack spacing={0} w={buttonWidth}>
-            <Button bg={'red.100'} w="100%" onClick={() => toggleShow('join')}>
+            <Button 
+              bg={'red.100'} 
+              _hover={{ 
+                backgroundColor: "red.200", 
+                color: "black" 
+              }} 
+              w="100%" 
+              onClick={() => toggleShow('join')}>
               Join Session
             </Button>
             <Collapse in={show === 'join'} animateOpacity>
@@ -48,7 +62,14 @@ const SessionOptions: React.FC = () => {
           </Stack>
 
           <Stack spacing={0} w={buttonWidth}>
-            <Button bg={'red.100'} w="100%" onClick={() => toggleShow('public')}>
+            <Button 
+              bg={'red.100'} 
+              _hover={{ 
+                backgroundColor: "red.200", 
+                color: "black" 
+              }} 
+              w="100%" 
+              onClick={() => toggleShow('public')}>
               Public Sessions
             </Button>
             <Collapse in={show === 'public'} animateOpacity>

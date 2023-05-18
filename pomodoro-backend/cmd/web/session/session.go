@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/lucionathan/pomodoro/cmd/web/client"
 )
@@ -84,6 +85,33 @@ func GetPublicSessions(w http.ResponseWriter, r *http.Request) {
 
 	w.Write(jsonResp)
 	return
+}
+
+func GetClientsInSession(w http.ResponseWriter, r *http.Request) {
+	sessionsMutex.Lock()
+	defer sessionsMutex.Unlock()
+
+	vars := mux.Vars(r)
+	sessionId := vars["sessionId"]
+
+	session, ok := sessions[sessionId]
+	if !ok {
+		http.Error(w, "Session not found", http.StatusNotFound)
+		return
+	}
+
+	var usernames []string
+	for client := range session.Clients {
+		usernames = append(usernames, client.Username)
+	}
+
+	jsonResponse, err := json.Marshal(usernames)
+	if err != nil {
+		http.Error(w, "Error marshalling JSON", http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(jsonResponse)
 }
 
 func GenerateRandomSessionID() string {

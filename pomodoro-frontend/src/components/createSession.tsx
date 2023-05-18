@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { Box, Button, VStack, Flex, Text, Switch, FormControl, FormLabel, Input } from '@chakra-ui/react';
 
@@ -6,9 +6,17 @@ const CreateSession: React.FC = () => {
   const router = useRouter();
   const [isPublic, setIsPublic] = useState(true);
   const [name, setName] = useState("");
+  const [criar, setCriar] = useState(0);
 
-  const handleCreateSession = () => {
-    router.push(`/pomodoro?createSession=true&isPublic=${isPublic}`);
+  const handleCreateSession = async () => {
+    console.log(isPublic)
+    router.push({
+      pathname: "/pomodoro",
+      query: {
+        isPublic: isPublic,
+      },
+    },
+    "/pomodoro")
   };
 
   return (
@@ -28,7 +36,7 @@ const CreateSession: React.FC = () => {
           </Flex>
         </FormControl>
       </Box>
-      <Button onClick={handleCreateSession}>
+      <Button onClick={() => handleCreateSession()}>
         Create
       </Button>
     </VStack>

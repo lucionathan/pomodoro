@@ -13,9 +13,11 @@ import {
   IconButton,
   CircularProgress,
   VStack,
-  Grid
+  Grid,
+  Spinner
 } from "@chakra-ui/react";
-import { useRouter } from "next/router";
+import { useRouter, NextRouter } from "next/router";
+import { auth } from '../../../config/firebaseConfig';
 import { MoonIcon, SunIcon } from "@chakra-ui/icons";
 import { useQueryState } from "../useQueryState";
 import Chat from "../chat";
@@ -27,9 +29,8 @@ interface PomodoroProps {
 const Pomodoro: React.FC = () => {
 
   const router = useRouter();
-  const { createSession } = router.query;
-  const [sessionID, setSessionID] = useQueryState('sessionID');
-
+  const [createSession, setCreateSession] = useState(false);
+  const [sessionID, setSessionID] = useState(null);
 
   const [time, setTime] = useState(0);
   const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
@@ -39,13 +40,24 @@ const Pomodoro: React.FC = () => {
   const { colorMode, toggleColorMode } = useColorMode();
 
   useEffect(() => {
-    if (sessionID) {
-      handleJoinSession();
+    console.log(router.query);
+    if (router.query.sessionID) {
+      console.log(`session id ${router.query.sessionID}`)
+      setSessionID(router.query.sessionID);
+    } else {
+      setIsPublic(router.query.isPublic);
+      setCreateSession(true);
     }
+  }, [router.query])
+
+  useEffect(() => {
+    console.log(sessionID);
+    handleJoinSession();
   }, [sessionID]);
 
   useEffect(() => {
-    if (createSession === 'true') {
+    if (createSession) {
+      console.log(`CREATING SESSION ${createSession}`)
       handleCreateSession();
     }
   }, [createSession]);
@@ -117,25 +129,28 @@ const Pomodoro: React.FC = () => {
   };
 
   const handleCreateSession = () => {
+    console.log("CRIEI UMA SESSÃO");
     console.log(isPublic);
-    const newWs = setupWebSocket(`/ws/create?public=${isPublic}`);
+    const newWs = setupWebSocket(`/ws/create?public=${isPublic}&userId=${auth.currentUser?.uid}`);
   
     // Listen for the 'created' event
     newWs.addEventListener('message', (event) => {
+      console.log("Message event fired");
+
       const message = JSON.parse(event.data);
       if (message.action === 'created') {
         const newSessionID = message.data;
         setSessionID(newSessionID);
   
         // Redirect to the Pomodoro page with the new session ID
-        router.push(`/pomodoro?sessionID=${newSessionID}`);
+        // router.push(`/pomodoro?sessionID=${newSessionID}`);
       }
     });
   };
 
   const handleJoinSession = () => {
     if (!sessionID) return;
-    setupWebSocket(`/ws/join?session=${sessionID}`);
+    setupWebSocket(`/ws/join?session=${sessionID}&userId=${auth.currentUser?.uid}`);
   };
 
   const handlePause = () => {
@@ -191,96 +206,102 @@ const Pomodoro: React.FC = () => {
   };
 
   return (
-    <Flex direction="column" justifyContent="center" alignItems="center" height="100vh">
-      <Grid templateColumns="2fr 1fr" gap={6} p={6}>
-        <Box bg={'red.900'} borderRadius={'lg'} p={5} minH="50vh" alignContent={"center"}>
-          <VStack spacing={4} w="100%">
-            
-            <Box>
-              <Text fontSize="5xl" fontWeight="bold" color={"white"}>
-                PomoSync
-              </Text>
-            </Box>
-            <Box>
-              <audio ref={audioRef} src="/alarm.mp3" />
-            </Box>
-            <FormControl maxW="xs" mt={8} alignSelf="center">
-              <Flex alignItems="center" justifyContent="center">
-                <FormLabel fontSize="2xl" htmlFor="session-id" color={"white"}>
-                  Session ID: {sessionID}
-                </FormLabel>
+        <Flex direction="column" justify="center" align="center" height="93vh">
+          <Grid templateColumns="2fr 1fr" gap={6} p={6}>
+            <Box bg={'red.900'} borderRadius={'lg'} p={5} minH="50vh" alignContent={"center"}>
+              <Flex direction="column" justify="center" align="center" height="100%">
+              {!sessionID ?
+                <Flex justify="center" align="center">
+                  <Spinner size="xl" color="red.200" thickness='4px' speed='0.65s'/>
+                </Flex>
+                :
+                <VStack spacing={4} w="100%">
+                  <Box>
+                    <Text fontSize="5xl" fontWeight="bold" color={"white"}>
+                      PomoSync
+                    </Text>
+                  </Box>
+                  <Box>
+                    <audio ref={audioRef} src="/alarm.mp3" />
+                  </Box>
+                  <FormControl maxW="xs" mt={8} alignSelf="center">
+                    <Flex alignItems="center" justifyContent="center">
+                      <FormLabel fontSize="2xl" htmlFor="session-id" color={"white"}>
+                        Session ID: {sessionID}
+                      </FormLabel>
+                    </Flex>
+                  </FormControl>
+                  
+                  <Box position="relative">
+                    <CircularProgress
+                      value={progressValue()}
+                      size="300px"
+                      thickness="12px"
+                      color="red.400"
+                      capIsRound
+                      trackColor={colorMode === "light" ? "gray.300" : "gray.600"}
+                    />
+                    <VStack
+                      position="absolute"
+                      top="50%"
+                      left="50%"
+                      transform="translate(-50%, -50%)"
+                      zIndex="1"
+                    >
+                      <Text fontSize="4xl" fontWeight="bold" color={"white"}>
+                        {displayType()}
+                      </Text>
+                      <Text fontSize="6xl" fontWeight="bold" my={4} color={"white"}>
+                        {displayTime()}
+                      </Text>
+                    </VStack>
+                  </Box>
+        
+                  <Box mb={40}>
+                    <Flex mb={100}>
+                      <Button fontSize="xl" onClick={handlePause} mr={2}>
+                        Pause
+                      </Button>
+                      <Button fontSize="xl" onClick={handlePlay}>
+                        Play
+                      </Button>
+                    </Flex>
+                  </Box>
+        
+                  <Box mt="30">
+                    <Flex>
+                      <Input
+                        _placeholder={{ color: 'white' }}
+                        color="white"       
+                        mr="5"
+                        type="email"
+                        id="friend-email"
+                        placeholder="Friend's email"
+                        mb={4}
+                        size="md"
+                        maxWidth="400px"
+                        fontSize="xl"
+                        value={friendEmail}
+                        onChange={(e) => setFriendEmail(e.target.value)}
+                      />
+                      <Button
+                        onClick={handleSendEmailInvite}
+                        size={"md"}
+                        width="200px"
+                      >
+                        Send Email Invite
+                      </Button>
+                    </Flex>
+                  </Box>
+                </VStack>
+              }
               </Flex>
-            </FormControl>
-            
-            <Box position="relative">
-              <CircularProgress
-                value={progressValue()}
-                size="300px"
-                thickness="12px"
-                color="red.400"
-                capIsRound
-                trackColor={colorMode === "light" ? "gray.300" : "gray.600"}
-              />
-              <VStack
-                position="absolute"
-                top="50%"
-                left="50%"
-                transform="translate(-50%, -50%)"
-                zIndex="1"
-              >
-                <Text fontSize="4xl" fontWeight="bold" color={"white"}>
-                  {displayType()}
-                </Text>
-                <Text fontSize="6xl" fontWeight="bold" my={4} color={"white"}>
-                  {displayTime()}
-                </Text>
-              </VStack>
             </Box>
-  
-            <Box mb={40}>
-              <Flex mb={100}>
-                <Button fontSize="xl" onClick={handlePause} mr={2}>
-                  Pause
-                </Button>
-                <Button fontSize="xl" onClick={handlePlay}>
-                  Play
-                </Button>
-              </Flex>
+            <Box mt={6}>
+              <Chat ws={ws} />
             </Box>
-  
-            <Box mt="30">
-              <Flex>
-                <Input
-                  _placeholder={{ color: 'white' }}
-                  color="white"       
-                  mr="5"
-                  type="email"
-                  id="friend-email"
-                  placeholder="Friend's email"
-                  mb={4}
-                  size="md"
-                  maxWidth="400px"
-                  fontSize="xl"
-                  value={friendEmail}
-                  onChange={(e) => setFriendEmail(e.target.value)}
-                />
-                <Button
-                  onClick={handleSendEmailInvite}
-                  size={"md"}
-                  width="200px"
-                >
-                  Send Email Invite
-                </Button>
-              </Flex>
-            </Box>
-  
-          </VStack>
-        </Box>
-        <Box mt={6}>
-          <Chat ws={ws} />
-        </Box>
-      </Grid>
-    </Flex>
+          </Grid>
+        </Flex>
   );
   
   

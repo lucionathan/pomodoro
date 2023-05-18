@@ -2,11 +2,13 @@ package websocket
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/websocket"
+	"github.com/lucionathan/pomodoro/cmd/config/firestore"
 	"github.com/lucionathan/pomodoro/cmd/web/client"
 	"github.com/lucionathan/pomodoro/cmd/web/session"
 )
@@ -15,6 +17,36 @@ var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin:     func(r *http.Request) bool { return true },
+}
+
+func GetUserUsername(uid string) (string, error) {
+	ctx, client := firestore.GetClient()
+
+	// Get user document reference
+	userRef := client.Collection("users").Doc(uid)
+
+	// Get user document snapshot
+	userSnapshot, err := userRef.Get(ctx)
+	if err != nil {
+		log.Printf("Failed to retrieve user document: %v", err)
+		return "", err
+	}
+
+	// Get the value of the "username" field from the snapshot
+	username, err := userSnapshot.DataAt("username")
+	if err != nil {
+		log.Printf("Failed to retrieve username from user document: %v", err)
+		return "", err
+	}
+
+	// Convert the username value to a string
+	usernameStr, ok := username.(string)
+	if !ok {
+		log.Printf("Username is not a string")
+		return "", nil
+	}
+
+	return usernameStr, nil
 }
 
 func HandleWebSocketCreate(w http.ResponseWriter, r *http.Request) {
@@ -26,10 +58,15 @@ func HandleWebSocketCreate(w http.ResponseWriter, r *http.Request) {
 
 	publicParam := r.URL.Query().Get("public")
 	isPublic, _ := strconv.ParseBool(publicParam)
+	userIdParam := r.URL.Query().Get("userId")
+	username, err := GetUserUsername(userIdParam)
+	fmt.Println(username)
+
+	fmt.Println("ID:", userIdParam)
 
 	sessionID := session.GenerateRandomSessionID()
 	sess := session.CreateSession(sessionID, isPublic)
-	cl := &client.Client{Conn: conn}
+	cl := &client.Client{Conn: conn, Username: username}
 	sess.Clients[cl] = true
 	session.SendStartingTimestampAndElapsedTime(sess, cl)
 	session.SendMessageToSession(sess, "created", sessionID, cl)
@@ -58,7 +95,10 @@ func HandleWebSocketJoin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cl := &client.Client{Conn: conn}
+	userIdParam := r.URL.Query().Get("userId")
+	username, err := GetUserUsername(userIdParam)
+
+	cl := &client.Client{Conn: conn, Username: username}
 	sess.Clients[cl] = true
 	session.SendStartingTimestampAndElapsedTime(sess, cl)
 

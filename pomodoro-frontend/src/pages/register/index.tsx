@@ -82,15 +82,17 @@ const Register: React.FC = () => {
   };
 
   return (
-    <Center h="100vh">
+    <Center h="90vh">
       <Box>
         <form onSubmit={handleSubmit}>
-          <FormControl maxW="xs" minW="md" minH="400px" mt={8} border="1px" borderRadius="md" p={4} boxShadow="lg">
-            <Text fontSize="4xl" fontWeight="bold" mb={4} textAlign="center">Register</Text>
+          <FormControl maxW="xs" minW="md" minH="400px" mt={8} border="1px" borderRadius="md" p={4} boxShadow="lg" bg="red.900">
+            <Text fontSize="4xl" fontWeight="bold" mb={4} color="white" textAlign="center">Register</Text>
             <Flex flexDirection="column">
               <Input
                 type="email"
                 placeholder="Email"
+                _placeholder={{ color: 'white' }}
+                color="white" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 mb={4}
@@ -101,6 +103,8 @@ const Register: React.FC = () => {
               <Input
                 type="text"
                 placeholder="Username"
+                _placeholder={{ color: 'white' }}
+                color="white" 
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 mb={4}
@@ -111,6 +115,8 @@ const Register: React.FC = () => {
               <Input
                 type="password"
                 placeholder="Password"
+                _placeholder={{ color: 'white' }}
+                color="white" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 mb={4}
@@ -121,6 +127,8 @@ const Register: React.FC = () => {
               <Input
                 type="password"
                 placeholder="Confirm Password"
+                _placeholder={{ color: 'white' }}
+                color="white" 
                 value={passwordConfirm}
                 onChange={(e) => setPasswordConfirm(e.target.value)}
                 mb={4}
@@ -129,8 +137,31 @@ const Register: React.FC = () => {
                 isRequired
               />
             </Flex>
-            <Button mb={2} w="full" type="submit">Register</Button>
-            <Button w="full" variant="outline" onClick={() => router.push("/login")}>Login</Button>
+            <Button 
+              mb={2} 
+              w="full" 
+              bg={'red.200'}
+              _hover={{ 
+                backgroundColor: "red.300", 
+                color: "black" 
+              }}
+              type="submit">Register</Button>
+
+
+              <Flex flexDirection="column" alignItems="center" mt="5">
+                  <Text color="white" mb="3">Already have an account?</Text>
+                  <Button 
+                      variant="outline" 
+                      bg={'red.200'}
+                      _hover={{ 
+                          backgroundColor: "red.300", 
+                          color: "black" 
+                      }}
+                      onClick={() => router.push("/login")}
+                  >
+                      Login
+                  </Button>
+              </Flex>
           </FormControl>
         </form>
       </Box>

@@ -7,6 +7,7 @@ const JoinSession: React.FC = () => {
   const router = useRouter();
 
   const handleJoinSession = () => {
+    console.log(`SESSION IDDDDDDDDD ${sessionID}`)
     router.push(`/pomodoro?sessionID=${sessionID}`);
   };
 
@@ -26,7 +27,7 @@ const JoinSession: React.FC = () => {
           />
         </FormControl>
       </Box>
-      <Button onClick={handleJoinSession}>
+      <Button onClick={() => handleJoinSession()}>
         Join
       </Button>
     </VStack>

@@ -7,7 +7,6 @@ import {
   Center,
   Flex,
   FormControl,
-  FormLabel,
   Input,
   Text,
   useToast,
@@ -51,15 +50,17 @@ const Login: React.FC = () => {
   };
 
   return (
-    <Center h="100vh">
+    <Center h="90vh">
       <Box>
         <form onSubmit={handleSubmit}>
-          <FormControl maxW="xs" minW="md" minH="300px" mt={8} border="1px" borderRadius="md" p={4} boxShadow="lg">
-            <Text fontSize="4xl" fontWeight="bold" mb={4} textAlign="center">Login</Text>
+          <FormControl maxW="xs" minW="md" minH="360px" mt={8} border="1px" borderRadius="md" p={4} boxShadow="lg" bg="red.900">
+            <Text fontSize="4xl" fontWeight="bold" mb={4} color="white" textAlign="center">Login</Text>
             <Flex flexDirection="column">
               <Input
                 type="email"
                 placeholder="Email"
+                _placeholder={{ color: 'white' }}
+                color="white" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 mb={4}
@@ -70,6 +71,8 @@ const Login: React.FC = () => {
               <Input
                 type="password"
                 placeholder="Password"
+                _placeholder={{ color: 'white' }}
+                color="white" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 mb={4}
@@ -78,8 +81,29 @@ const Login: React.FC = () => {
                 isRequired
               />
             </Flex>
-            <Button mb={2} w="full" type="submit">Login</Button>
-            <Button w="full" variant="outline" onClick={() => router.push("/register")}>Register</Button>
+            <Button 
+              mb={2} 
+              w="full" 
+              bg={'red.200'}
+              _hover={{ 
+                backgroundColor: "red.300", 
+                color: "black" 
+              }}
+              type="submit">Login</Button>
+            <Flex flexDirection="column" alignItems="center" mt="5">
+              <Text color="white" mb="3">Don't have an account?</Text>
+              <Button 
+                variant="outline" 
+                bg={'red.200'}
+                _hover={{ 
+                    backgroundColor: "red.300", 
+                    color: "black" 
+                }}
+                onClick={() => router.push("/register")}
+              >
+                  Register
+              </Button>
+            </Flex>
           </FormControl>
         </form>
       </Box>

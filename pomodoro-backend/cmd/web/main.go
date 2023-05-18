@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/lucionathan/pomodoro/cmd/config/firestore"
 	"github.com/lucionathan/pomodoro/cmd/web/session"
 	"github.com/lucionathan/pomodoro/cmd/web/websocket"
@@ -65,10 +66,14 @@ func createUserHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.Handle("/ws/join", corsMiddleware(http.HandlerFunc(websocket.HandleWebSocketJoin)))
-	http.Handle("/ws/create", corsMiddleware(http.HandlerFunc(websocket.HandleWebSocketCreate)))
-	http.Handle("/createUser", corsMiddleware(http.HandlerFunc(createUserHandler)))
-	http.Handle("/getSessions", corsMiddleware(http.HandlerFunc(session.GetPublicSessions)))
+	r := mux.NewRouter()
+
+	r.Handle("/ws/join", corsMiddleware(http.HandlerFunc(websocket.HandleWebSocketJoin)))
+	r.Handle("/ws/create", corsMiddleware(http.HandlerFunc(websocket.HandleWebSocketCreate)))
+	r.Handle("/createUser", corsMiddleware(http.HandlerFunc(createUserHandler)))
+	r.Handle("/getSessions", corsMiddleware(http.HandlerFunc(session.GetPublicSessions)))
+	r.Handle("/session/{sessionId}", corsMiddleware(http.HandlerFunc(session.GetClientsInSession)))
+
 	fmt.Println("Server started at :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(":8080", r))
 }
