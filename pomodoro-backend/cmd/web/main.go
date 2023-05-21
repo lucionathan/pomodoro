@@ -72,7 +72,8 @@ func main() {
 	r.Handle("/ws/create", corsMiddleware(http.HandlerFunc(websocket.HandleWebSocketCreate)))
 	r.Handle("/createUser", corsMiddleware(http.HandlerFunc(createUserHandler)))
 	r.Handle("/getSessions", corsMiddleware(http.HandlerFunc(session.GetPublicSessions)))
-	r.Handle("/session/{sessionId}", corsMiddleware(http.HandlerFunc(session.GetClientsInSession)))
+	r.Handle("/usernames/{sessionID}", corsMiddleware(http.HandlerFunc(session.GetUsernamesInSession)))
+	r.Handle("/session/{sessionID}", corsMiddleware(http.HandlerFunc(session.GetClientsInSession)))
 
 	fmt.Println("Server started at :8080")
 	log.Fatal(http.ListenAndServe(":8080", r))

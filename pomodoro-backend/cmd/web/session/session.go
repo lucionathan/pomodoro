@@ -30,6 +30,7 @@ type Message struct {
 	Data        string `json:"data"`
 	StartTime   int64  `json:"startTime"`
 	ElapsedTime int    `json:"elapsedTime"`
+	Username    string `json:"username"`
 }
 
 var sessions = make(map[string]*Session)
@@ -50,6 +51,44 @@ func CreateSession(sessionID string, isPublic bool) *Session {
 	sessions[sessionID] = session
 
 	return session
+}
+
+func GetUsernamesInSession(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	sessionID := vars["sessionID"]
+	if sessionID == "" {
+		http.Error(w, "Missing sessionId parameter", http.StatusBadRequest)
+		return
+	}
+
+	sessionsMutex.Lock()
+	defer sessionsMutex.Unlock()
+
+	session, ok := sessions[sessionID]
+	if !ok {
+		http.Error(w, "Session not found", http.StatusNotFound)
+		return
+	}
+
+	// Use a map to ensure unique usernames, but we'll convert it to a slice later
+	usernamesMap := make(map[string]bool)
+	for client := range session.Clients {
+		usernamesMap[client.Username] = true
+	}
+
+	// Convert the map keys to a slice
+	usernamesSlice := make([]string, 0, len(usernamesMap))
+	for username := range usernamesMap {
+		usernamesSlice = append(usernamesSlice, username)
+	}
+
+	jsonResp, err := json.Marshal(usernamesSlice)
+	if err != nil {
+		http.Error(w, "Error marshalling JSON", http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(jsonResp)
 }
 
 func GetSession(sessionID string) (*Session, error) {
@@ -160,29 +199,31 @@ func ReadAndProcessMessages(conn *websocket.Conn, session *Session, client *clie
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
+			SendMessageToSession(session, "userLeft", client.Username, nil, "")
 			delete(session.Clients, client)
 			checkAndCloseSessionIfEmpty(session)
 			break
 		}
-		// fmt.Println(message)
 
 		var msg Message
 		json.Unmarshal(message, &msg)
+
+		msg.Username = client.Username
 
 		fmt.Println(msg)
 
 		switch msg.Action {
 		case "pause":
-			SendMessageToSession(session, "pause", msg.Data, nil)
+			SendMessageToSession(session, "pause", msg.Data, nil, msg.Username)
 		case "play":
-			SendMessageToSession(session, "play", msg.Data, nil)
+			SendMessageToSession(session, "play", msg.Data, nil, msg.Username)
 		case "chat":
-			SendMessageToSession(session, "chat", msg.Data, nil)
+			SendMessageToSession(session, "chat", msg.Data, nil, msg.Username)
 		}
 	}
 }
 
-func SendMessageToSession(session *Session, action string, data string, targetClient *client.Client) {
+func SendMessageToSession(session *Session, action string, data string, targetClient *client.Client, username string) {
 	calculateSessionTime(session, action)
 
 	message := Message{
@@ -190,6 +231,7 @@ func SendMessageToSession(session *Session, action string, data string, targetCl
 		Data:        data,
 		StartTime:   session.StartTime,
 		ElapsedTime: session.ElapsedTime,
+		Username:    username,
 	}
 	messageBytes, _ := json.Marshal(message)
 
@@ -220,6 +262,6 @@ func calculateSessionTime(session *Session, action string) {
 
 func SendStartingTimestampAndElapsedTime(session *Session, client *client.Client) {
 	if session.StartTime > 0 || session.ElapsedTime > 0 {
-		SendMessageToSession(session, "play", strconv.FormatInt(session.StartTime, 10)+","+strconv.Itoa(session.ElapsedTime), client)
+		SendMessageToSession(session, "play", strconv.FormatInt(session.StartTime, 10)+","+strconv.Itoa(session.ElapsedTime), client, "")
 	}
 }

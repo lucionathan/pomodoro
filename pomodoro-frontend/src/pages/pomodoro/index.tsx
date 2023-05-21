@@ -18,8 +18,8 @@ import {
 } from "@chakra-ui/react";
 import { useRouter, NextRouter } from "next/router";
 import { auth } from '../../../config/firebaseConfig';
+import UserList from "@/components/userList";
 import { MoonIcon, SunIcon } from "@chakra-ui/icons";
-import { useQueryState } from "../useQueryState";
 import Chat from "../chat";
 
 interface PomodoroProps {
@@ -207,7 +207,15 @@ const Pomodoro: React.FC = () => {
 
   return (
         <Flex direction="column" justify="center" align="center" height="93vh">
-          <Grid templateColumns="2fr 1fr" gap={6} p={6}>
+          <Grid templateColumns="1fr 2.5fr 1fr" gap={6} p={6}>
+            <Box>
+              {!sessionID ?
+                  <Flex justify="center" align="center">
+                    <Spinner size="xl" color="red.200" thickness='4px' speed='0.65s'/>
+                  </Flex> :
+              <UserList ws={ws} sessionID={sessionID} />
+              }
+            </Box>
             <Box bg={'red.900'} borderRadius={'lg'} p={5} minH="50vh" alignContent={"center"}>
               <Flex direction="column" justify="center" align="center" height="100%">
               {!sessionID ?
@@ -297,7 +305,7 @@ const Pomodoro: React.FC = () => {
               }
               </Flex>
             </Box>
-            <Box mt={6}>
+            <Box>
               <Chat ws={ws} />
             </Box>
           </Grid>

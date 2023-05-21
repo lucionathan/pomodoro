@@ -69,7 +69,8 @@ func HandleWebSocketCreate(w http.ResponseWriter, r *http.Request) {
 	cl := &client.Client{Conn: conn, Username: username}
 	sess.Clients[cl] = true
 	session.SendStartingTimestampAndElapsedTime(sess, cl)
-	session.SendMessageToSession(sess, "created", sessionID, cl)
+	session.SendMessageToSession(sess, "created", sessionID, cl, "")
+	session.SendMessageToSession(sess, "userJoined", username, nil, "")
 
 	session.ReadAndProcessMessages(conn, sess, cl)
 }
@@ -101,6 +102,8 @@ func HandleWebSocketJoin(w http.ResponseWriter, r *http.Request) {
 	cl := &client.Client{Conn: conn, Username: username}
 	sess.Clients[cl] = true
 	session.SendStartingTimestampAndElapsedTime(sess, cl)
+
+	session.SendMessageToSession(sess, "userJoined", username, nil, "")
 
 	session.ReadAndProcessMessages(conn, sess, cl)
 }

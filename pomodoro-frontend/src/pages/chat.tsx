@@ -5,8 +5,16 @@ interface ChatProps {
   ws: WebSocket | null;
 }
 
+interface Message {
+  action: string;
+  data: string;
+  username: string;
+  startTime?: number;
+  elapsedTime?: number;
+}
+
 const Chat: React.FC<ChatProps> = ({ ws }) => {
-  const [messages, setMessages] = useState<string[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const messageRef = useRef<HTMLDivElement>(null);
 
@@ -14,10 +22,11 @@ const Chat: React.FC<ChatProps> = ({ ws }) => {
     if (!ws) return;
 
     const handleMessage = (event: MessageEvent) => {
-      const message = JSON.parse(event.data);
-
+      console.log(event);
+      const message: Message = JSON.parse(event.data);
+      console.log(message);
       if (message.action === 'chat') {
-        setMessages((prevMessages) => [...prevMessages, message.data]);
+        setMessages((prevMessages) => [...prevMessages, message]);
       }
     };
 
@@ -55,9 +64,9 @@ const Chat: React.FC<ChatProps> = ({ ws }) => {
         borderRadius="md"
         p={2}
       >
-        {messages.map((message, index) => (
-          <Text color="white" key={index}>{"nickname"}: {message}</Text>
-        ))}
+      {messages.map((message, index) => (
+        <Text color="white" key={index}>{message.username}: {message.data}</Text>
+      ))}
       </Box>
       <Input
         value={inputMessage}
