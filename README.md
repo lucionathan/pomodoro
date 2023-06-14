@@ -57,7 +57,7 @@ Agora, você deve ser capaz de abrir o app no seu navegador, acessando `http://l
 
 ## Contribuindo
 
-Agradecemos suas contribuições! Por favor, leia o guia de contribuição antes de iniciar. Não hesite em criar um Issue ou um Pull Request.
+Para contribuir é só criar uma Issue ou um Pull Request.
 
 ## Licença
 
