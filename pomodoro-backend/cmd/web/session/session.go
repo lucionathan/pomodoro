@@ -34,7 +34,7 @@ type Message struct {
 }
 
 var sessions = make(map[string]*Session)
-var sessionsMutex = &sync.Mutex{}
+var sessionsMutex = &sync.RWMutex{}
 
 func CreateSession(sessionID string, isPublic bool) *Session {
 	sessionsMutex.Lock()
@@ -61,8 +61,8 @@ func GetUsernamesInSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionsMutex.Lock()
-	defer sessionsMutex.Unlock()
+	sessionsMutex.RLock()
+	defer sessionsMutex.RUnlock()
 
 	session, ok := sessions[sessionID]
 	if !ok {
@@ -70,13 +70,11 @@ func GetUsernamesInSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Use a map to ensure unique usernames, but we'll convert it to a slice later
 	usernamesMap := make(map[string]bool)
 	for client := range session.Clients {
 		usernamesMap[client.Username] = true
 	}
 
-	// Convert the map keys to a slice
 	usernamesSlice := make([]string, 0, len(usernamesMap))
 	for username := range usernamesMap {
 		usernamesSlice = append(usernamesSlice, username)
@@ -92,8 +90,8 @@ func GetUsernamesInSession(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetSession(sessionID string) (*Session, error) {
-	sessionsMutex.Lock()
-	defer sessionsMutex.Unlock()
+	sessionsMutex.RLock()
+	defer sessionsMutex.RUnlock()
 
 	session, ok := sessions[sessionID]
 	if !ok {
@@ -104,8 +102,8 @@ func GetSession(sessionID string) (*Session, error) {
 }
 
 func GetPublicSessions(w http.ResponseWriter, r *http.Request) {
-	sessionsMutex.Lock()
-	defer sessionsMutex.Unlock()
+	sessionsMutex.RLock()
+	defer sessionsMutex.RUnlock()
 
 	var sessionsAux []Session
 
@@ -116,19 +114,17 @@ func GetPublicSessions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	jsonResp, err := json.Marshal(sessionsAux)
-	// fmt.Println(string(jsonResp))
 
 	if err != nil {
 		log.Fatalf("Error happened in JSON marshal. Err: %s", err)
 	}
 
 	w.Write(jsonResp)
-	return
 }
 
 func GetClientsInSession(w http.ResponseWriter, r *http.Request) {
-	sessionsMutex.Lock()
-	defer sessionsMutex.Unlock()
+	sessionsMutex.RLock()
+	defer sessionsMutex.RUnlock()
 
 	vars := mux.Vars(r)
 	sessionId := vars["sessionId"]
@@ -172,7 +168,7 @@ func (s *Session) BroadcastMessages() {
 			for client := range s.Clients {
 				err := client.Conn.WriteMessage(websocket.TextMessage, message)
 				if err != nil {
-					client.Conn.Close() // Close the connection
+					client.Conn.Close()
 					delete(s.Clients, client)
 				}
 			}
@@ -199,19 +195,25 @@ func ReadAndProcessMessages(conn *websocket.Conn, session *Session, client *clie
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
+			sessionsMutex.Lock()
 			SendMessageToSession(session, "userLeft", client.Username, nil, "")
 			delete(session.Clients, client)
 			checkAndCloseSessionIfEmpty(session)
+			sessionsMutex.Unlock()
 			break
 		}
 
 		var msg Message
-		json.Unmarshal(message, &msg)
+		err = json.Unmarshal(message, &msg)
+		if err != nil {
+			continue
+		}
 
 		msg.Username = client.Username
 
 		fmt.Println(msg)
 
+		sessionsMutex.Lock()
 		switch msg.Action {
 		case "pause":
 			SendMessageToSession(session, "pause", msg.Data, nil, msg.Username)
@@ -220,6 +222,7 @@ func ReadAndProcessMessages(conn *websocket.Conn, session *Session, client *clie
 		case "chat":
 			SendMessageToSession(session, "chat", msg.Data, nil, msg.Username)
 		}
+		sessionsMutex.Unlock()
 	}
 }
 

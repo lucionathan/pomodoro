@@ -22,24 +22,20 @@ var upgrader = websocket.Upgrader{
 func GetUserUsername(uid string) (string, error) {
 	ctx, client := firestore.GetClient()
 
-	// Get user document reference
 	userRef := client.Collection("users").Doc(uid)
 
-	// Get user document snapshot
 	userSnapshot, err := userRef.Get(ctx)
 	if err != nil {
 		log.Printf("Failed to retrieve user document: %v", err)
 		return "", err
 	}
 
-	// Get the value of the "username" field from the snapshot
 	username, err := userSnapshot.DataAt("username")
 	if err != nil {
 		log.Printf("Failed to retrieve username from user document: %v", err)
 		return "", err
 	}
 
-	// Convert the username value to a string
 	usernameStr, ok := username.(string)
 	if !ok {
 		log.Printf("Username is not a string")
@@ -59,7 +55,7 @@ func HandleWebSocketCreate(w http.ResponseWriter, r *http.Request) {
 	publicParam := r.URL.Query().Get("public")
 	isPublic, _ := strconv.ParseBool(publicParam)
 	userIdParam := r.URL.Query().Get("userId")
-	username, err := GetUserUsername(userIdParam)
+	username, _ := GetUserUsername(userIdParam)
 	fmt.Println(username)
 
 	fmt.Println("ID:", userIdParam)
@@ -97,7 +93,7 @@ func HandleWebSocketJoin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userIdParam := r.URL.Query().Get("userId")
-	username, err := GetUserUsername(userIdParam)
+	username, _ := GetUserUsername(userIdParam)
 
 	cl := &client.Client{Conn: conn, Username: username}
 	sess.Clients[cl] = true
